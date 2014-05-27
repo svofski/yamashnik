@@ -14,7 +14,7 @@ The host software supports 3 different modes:
 
 1. CP/M upload: files can be uploaded to the RAM disk of builtin CP/M into remote machine
 2. BASIC send: BASIC and ROM files can be transferred over network to remote machines
-3. A special version of MSX-DOS can be deployed to the remote machine. Its transfers file system requests to the host machine, which then becomes a file server. Disk based MSX-DOS software can be used using this mode.
+3. A special version of MSX-DOS can be deployed to the remote machine. Its transfers file system requests to the host machine, which then becomes a file server. Disk based MSX-DOS software can be used using this mode. MSX-DOS files MSXDOS.SYS and COMMAND.COM are not included in this package.
 
 #### Compatibility list
 - Turbo Pascal 3.0
