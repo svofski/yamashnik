@@ -330,9 +330,9 @@ Func8_ConsoleInputNoEcho:
 ;                db 70h
 ;                dw 009Fh
 ;                ret
-				call CONST_unsafe
-				ret z
-				jp CONIN_unsafe 
+		call CONST_unsafe
+		ret z
+		jp CONIN_unsafe 
 
 ; ---------------------------------------------------------------------------
 
