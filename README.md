@@ -2,13 +2,15 @@ yamashnik
 =========
 YIS503II MSX-2 MSXNET hardware + software
 
-kicad/ USB to MSXNET adapter schematic + pcb
-sw/spyvspy software that emulates server software and supports various boot protocols
+CONTENTS
+--------
+- `kicad/` USB to MSXNET adapter schematic + PCB layout for home making
+- `sw/spyvspy/` software that emulates server software and supports various boot protocols
 
 HOW TO BUILD
 ------------
-You need Linux or Darwin/OSX and a sane build environment. 
-wget is needed to fetch z80asm from savannah. 
+You need Linux or Darwin/OSX and a sane build environment. `wget` utility is needed to fetch z80asm from savannah. 
+
 It should work in Windows with some POSIX-emulation layer but it's not proven. 
 
   1. check out or download the source
