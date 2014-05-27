@@ -16,6 +16,7 @@ It should work in Windows with some POSIX-emulation layer but it's not proven.
   1. check out or download the source
   2. cd yamashnik/sw
   3. type make
+  4. if all is well, msxnet and remote bootstrap files are in yamashnik/sw/spyvspy/build subdirectory
 
 HOW TO USE
 ----------
