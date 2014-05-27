@@ -1,3 +1,5 @@
 *.o
 *.swp
 z80asm*
+
+kicad/yamashnik.bak
