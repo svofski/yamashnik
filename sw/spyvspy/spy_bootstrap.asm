@@ -1,3 +1,6 @@
+                ; Bootstrap code based on contents of SPY.COM network utility
+
+                ; MSX-BIOS headers are part of z80asm package
 				include 'msx-bios.asm'
 
 TPA_EntryPoint:	equ 100h

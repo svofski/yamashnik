@@ -3,3 +3,11 @@
 z80asm*
 
 kicad/yamashnik.bak
+
+sw/spyvspy/msxnet
+
+sw/spyvspy/spy_bdos_e900.ram
+
+sw/spyvspy/spy_bootstrap.bin
+
+sw/spyvspy/tpa.com

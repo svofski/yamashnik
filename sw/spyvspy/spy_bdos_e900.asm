@@ -1,16 +1,17 @@
-ColdStart:		equ 0
+                ; Resident part of network MSX-DOS (Net-BDOS)
+                ; Based on parts of SPY.COM network utility
+
+ColdStart:	equ 0
 CurrentDMAAddr: equ $F23D
-CAPST:			equ $FCAB
-GETPNT:			equ $F3FA
-PUTPNT:			equ $F3F8
-STORESP:		equ $F304
-SLTSL:			equ 0FFFFh		; secondary slot select
+CAPST:		equ $FCAB
+GETPNT:		equ $F3FA
+PUTPNT:		equ $F3F8
+STORESP:	equ $F304
+SLTSL:		equ 0FFFFh		; secondary slot select
 
-DEBUG:			equ 0
+DEBUG:		equ 0
 
-
-				org $E900
-
+		org $E900
 
 EntryPoint:     jp EntryPoint_
 				jp Init
@@ -30,25 +31,24 @@ EntryPoint_:
                 ld a, '['
                 call DispCharInA
 
-				ld hl, (STORESP)
-				ld b, 4
+		ld hl, (STORESP)
+		ld b, 4
 stackloop:
                 push bc
-				ld e, (hl)
-				inc hl
-				ld d, (hl)
-				inc hl
-				push hl
-				ex de, hl
-				dec hl 
-				dec hl
-				dec hl
-				call DispHLhex
-				call DispSpace
-				pop hl
-				pop bc
-				djnz stackloop
-
+		ld e, (hl)
+		inc hl
+		ld d, (hl)
+		inc hl
+		push hl
+		ex de, hl
+		dec hl 
+		dec hl
+		dec hl
+		call DispHLhex
+		call DispSpace
+		pop hl
+		pop bc
+		djnz stackloop
                 ld a, ']'
                 call DispCharInA
 
@@ -95,10 +95,10 @@ nodebug:
 
 ; ---------------------------------------------------------------------------
 ExitPoint:
-				pop iy
-				pop ix
-				ld 		sp,(STORESP)
-				ret
+		pop iy
+		pop ix
+		ld 		sp,(STORESP)
+		ret
 ; ---------------------------------------------------------------------------
 
 
@@ -219,8 +219,6 @@ capslock_on:
                 out     (0ABh), a
                 ex      af, af'
                 ret
-
-
 ;
 ; Dispatch BDOS function in C to custom hooks from DispatchTable
 ;
@@ -659,13 +657,13 @@ Func30_AbsoluteSectorWrite:
                 ret
 
 FuncXX_NoOperation:
-				ret
+		ret
 
 SendWord:
-				ld 		d, h
-				call    FIFO_SendByte
-				ld 		d, l
-				call 	FIFO_SendByte
+		ld 		d, h
+		call    FIFO_SendByte
+		ld 		d, l
+		call 	FIFO_SendByte
                 push    bc
                 ld      bc, 400h
                 call    DelayBC
@@ -673,31 +671,31 @@ SendWord:
 				ret
 
 SendDebugBlock:
-				exx
-				ld hl, (CurrentDMAAddr)
-				;ld hl, ($fffe)
-				;in a, (0a8h)
-				;ld l, a
-				call SendWord
-				ld hl, 0
-				add hl, sp
-				call SendWord
-				ld	hl, (STORESP)
-				call SendWord
-				push ix
-				ld   ix, (STORESP)
-				ld   l, (ix+0)
-				ld   h, (ix+1)
-				call SendWord
-				ld   l, (ix+2)
-				ld   h, (ix+3)
-				call SendWord
-				ld   l, (ix+4)
-				ld   h, (ix+5)
-				call SendWord
-				pop  ix
-				exx
-				ret
+		exx
+		ld hl, (CurrentDMAAddr)
+		;ld hl, ($fffe)
+		;in a, (0a8h)
+		;ld l, a
+		call SendWord
+		ld hl, 0
+		add hl, sp
+		call SendWord
+		ld	hl, (STORESP)
+		call SendWord
+		push ix
+		ld   ix, (STORESP)
+		ld   l, (ix+0)
+		ld   h, (ix+1)
+		call SendWord
+		ld   l, (ix+2)
+		ld   h, (ix+3)
+		call SendWord
+		ld   l, (ix+4)
+		ld   h, (ix+5)
+		call SendWord
+		pop  ix
+		exx
+		ret
 
 
 SendFCB:                          
@@ -970,198 +968,195 @@ DispatchTable:dw Func0_ProgramTerminate
                 dw Func2F_AbsoluteSectorRead
                 dw Func30_AbsoluteSectorWrite
 
-Init:			call PatchBIOSCalls
-				ret
+Init:		call PatchBIOSCalls
+		ret
 
 PatchBIOSCalls:
-				ld hl, ($0001) 	; points to dc03: jmp WARMBOOT
-				ld bc, 3
-				add hl, bc
-				; HL points to CONST vector
+		ld hl, ($0001) 	; points to dc03: jmp WARMBOOT
+		ld bc, 3
+		add hl, bc
+		; HL points to CONST vector
 
-				ex de, hl 		; DE = BIOS Jump Table
-				ld hl, PatchJumpTable
-				ld bc, PatchJumpTable_End - PatchJumpTable
-				ldir
-				ret
+		ex de, hl 		; DE = BIOS Jump Table
+		ld hl, PatchJumpTable
+		ld bc, PatchJumpTable_End - PatchJumpTable
+		ldir
+		ret
 
 PatchJumpTable:	;jp WARMBOOT
-				jp CONST 				; DC0F
-				jp CONIN 				; DC2C
-				jp CONOUT 				; DC43
-				;
+		jp CONST 				; DC0F
+		jp CONIN 				; DC2C
+		jp CONOUT 				; DC43
+		;
 PatchJumpTable_End:
 
-WARMBOOT:		jp $
+WARMBOOT:	jp $
 
 CONST:			
                 ld		(STORESP), sp
                 ld 		sp, $DC00 
                 call CONST_unsafe
-				ld 		sp, (STORESP)
-				ret
+		ld 		sp, (STORESP)
+		ret
 
 CONST_unsafe:
                 push ix
                 push iy
                 rst 	30h   			; BREAKX check Ctrl+STOP 
-                db 		70h				; CY when Ctrl+STOP pressed
-                dw 		00B7h
+                db 	70h			; CY when Ctrl+STOP pressed
+                dw 	00B7h
 
-                jr 		nc, CONST_1 	; STOP was not pressed
+                jr 	nc, CONST_1 	       ; STOP was not pressed
 
-                ld a, 3 				; STOP was pressed
+                ld a, 3 			; STOP was pressed
                 ld ($f336), a 			; Set F336 and F337 to 3
                 ld ($f337), a 			; which is a STOP trait
-                and a 					; clear zero flag
+                and a 				; clear zero flag
                 jr CONST_EXIT 			; return
 
-CONST_1:		ld a, ($f336) 			; F336 != 0 ==> F337 is valid
-				and a 					; check validity
-				ld a, ($f337)  			; preload value in a
-				jr nz, CONST_EXIT 		; yes, valid, exit using value in a
-										; no value in f336/f337:
-				rst 	30h  			; CHSNS 
-				db 		70h 			; Tests the status of the keyboard buffer
-				dw 		009Ch 			; Z-flag set if buffer is empty
-				jr z, CONST_EXIT 		; zero set, return 
- 										; else
-				ld a, $ff 				; set validity flag in F336
-				ld ($f336), a 
+CONST_1:		ld a, ($f336) 		; F336 != 0 ==> F337 is valid
+		and a 				; check validity
+		ld a, ($f337)  			; preload value in a
+		jr nz, CONST_EXIT 		; yes, valid, exit using value in a
+						; no value in f336/f337:
+		rst 	30h  			; CHSNS 
+		db 		70h 		; Tests the status of the keyboard buffer
+		dw 		009Ch 		; Z-flag set if buffer is empty
+		jr z, CONST_EXIT 		; zero set, return 
+						; else
+		ld a, $ff 			; set validity flag in F336
+		ld ($f336), a 
 
-				rst 	30h 			; CHGET (Waiting)
-				db 		70h  			; Retrieve character from buffer
-				dw 		009Fh 			; 
-				ld ($f337), a 			; store the char in F337
+		rst 	30h 			; CHGET (Waiting)
+		db 		70h  		; Retrieve character from buffer
+		dw 		009Fh 		; 
+		ld ($f337), a 			; store the char in F337
 
-CONST_EXIT: 							; and return 
-				pop iy
-				pop ix
-				ret
+CONST_EXIT: 					; and return 
+		pop iy
+		pop ix
+		ret
 
 CONIN:			
                 ld		(STORESP), sp
                 ld 		sp, $DC00 
                 call CONIN_unsafe
-				ld 		sp, (STORESP)
-				ret  
+		ld 		sp, (STORESP)
+		ret  
 
 CONIN_unsafe:
                 push ix
                 push iy
-				push hl
-				ld hl, $F336 			; keyboard status addr
-				xor a 
-				cp (hl) 				; check if (F336) is 0
-				ld (hl), a 				; clear (F336) for the next time
-				inc hl 					; F337
-				ld a, (hl) 				; load stored char value 
-				pop hl 	
-				jr nz, CONIN_EXIT 		; (F336) not zero, a has valid value
-										; return
+		push hl
+		ld hl, $F336 			; keyboard status addr
+		xor a 
+		cp (hl) 			; check if (F336) is 0
+		ld (hl), a			; clear (F336) for the next time
+		inc hl 				; F337
+		ld a, (hl) 			; load stored char value 
+		pop hl 	
+		jr nz, CONIN_EXIT 		; (F336) not zero, a has valid value
+						; return
 
-										; otherwise get the value from buf
-                rst     30h             ; CHGET (Waiting)
-                db 		70h
-                dw 		9Fh
+						; otherwise get the value from buf
+                rst     30h                     ; CHGET (Waiting)
+                db 	70h
+                dw 	9Fh
 CONIN_EXIT:
-				pop iy
-				pop ix
-				ret
+		pop iy
+		pop ix
+		ret
 
 CONOUT:			
                 ld		(STORESP), sp
                 ld 		sp, $DC00 
                 call CONOUT_unsafe
-				ld 		sp, (STORESP)
-				ret
+		ld 		sp, (STORESP)
+		ret
 
 CONOUT_unsafe:
                 push ix
                 push iy
-				ld 		a, c
+		ld    a, c
                 rst     30h             ; CHPUT
-                db 		70h
-                dw 		0A2h
-				pop iy
-				pop ix
+                db      70h
+                dw 	0A2h
+		pop iy
+		pop ix
                 ret
 
 
 ;Display a 16- or 8-bit number in hex.
 DispHLhex:
 ; Input: HL
-   ld  c,h
-   call  OutHex8
-   ld  c,l
+                ld  c,h
+                call  OutHex8
+                ld  c,l
 OutHex8:
 ; Input: C
-   ld  a,c
-   rra
-   rra
-   rra
-   rra
-   call  Conv
-   ld  a,c
+                ld  a,c
+                rra
+                rra
+                rra
+                rra
+                call  Conv
+                ld  a,c
 Conv:
-   and  $0F
-   add  a,$90
-   daa
-   adc  a,$40
-   daa
-   
-   out (98h), a
-
-   ret
+                and  $0F
+                add  a,$90
+                daa
+                adc  a,$40
+                daa
+                out (98h), a
+                ret
 
 DispSpace:
-	ld a, ' '
+	       ld a, ' '
 DispCharInA:
-	out (98h), a
-	ret
+        	out (98h), a
+        	ret
 
 DispCRLF:
-	ld a, 0dh
-	out (98h), a
-	ld a, 0ah
-	out (98h), a
-	ret
+                ld a, 0dh
+                out (98h), a
+                ld a, 0ah
+                out (98h), a
+                ret
 
 DiagnosticsDeath:
-	push hl
-	push de
-	push bc
-	push af
-	pop hl
-	call DispHLhex
-	call DispSpace
-	pop hl
-	call DispHLhex
-	call DispSpace
-	pop hl
-	call DispHLhex
-	call DispSpace
-	pop hl
-	call DispHLhex
-	call DispSpace
+                push hl
+                push de
+                push bc
+                push af
+                pop hl
+                call DispHLhex
+                call DispSpace
+                pop hl
+                call DispHLhex
+                call DispSpace
+                pop hl
+                call DispHLhex
+                call DispSpace
+                pop hl
+                call DispHLhex
+                call DispSpace
 
-	call DispSpace
-	ld hl, (CurrentDMAAddr)	
-	call DispHLhex
-	call DispSpace
+                call DispSpace
+                ld hl, (CurrentDMAAddr)	
+                call DispHLhex
+                call DispSpace
 
-	ld hl, (CurrentDMAAddr)	
-	ld d, $ff
+                ld hl, (CurrentDMAAddr)	
+                ld d, $ff
 ddloop:
-	ld c, (hl)
-	call OutHex8
-	call DispSpace
-	inc hl
-	dec d
-	jp nz,ddloop
+                ld c, (hl)
+                call OutHex8
+                call DispSpace
+                inc hl
+                dec d
+                jp nz,ddloop
+                jr $
 
-	jr $
 
-
-	include 'inputline.inc'
+	       include 'inputline.inc'
 
