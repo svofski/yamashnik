@@ -1,0 +1,94 @@
+Cmp-Mod V01 Created by PcbNew date = Sun 26 May 2013 05:22:51 PM MSK
+
+BeginCmp
+TimeStamp = /51A13A53;
+Reference = C1;
+ValeurCmp = 0.1;
+IdModule  = SM0603;
+EndCmp
+
+BeginCmp
+TimeStamp = /51995828;
+Reference = C2;
+ValeurCmp = 0.1;
+IdModule  = SM0603;
+EndCmp
+
+BeginCmp
+TimeStamp = /51A139D0;
+Reference = C3;
+ValeurCmp = 0.1;
+IdModule  = SM0603;
+EndCmp
+
+BeginCmp
+TimeStamp = /51A137D8;
+Reference = J1;
+ValeurCmp = USB;
+IdModule  = USBAP_1P;
+EndCmp
+
+BeginCmp
+TimeStamp = /51A13ABD;
+Reference = P1;
+ValeurCmp = CONN_5;
+IdModule  = PIN_ARRAY_5x1;
+EndCmp
+
+BeginCmp
+TimeStamp = /519AA5F7;
+Reference = P2;
+ValeurCmp = CONN_4;
+IdModule  = PIN_ARRAY_4x1;
+EndCmp
+
+BeginCmp
+TimeStamp = /519957A1;
+Reference = R1;
+ValeurCmp = 220;
+IdModule  = SM0805;
+EndCmp
+
+BeginCmp
+TimeStamp = /519957D4;
+Reference = R2;
+ValeurCmp = 11K;
+IdModule  = SM0805;
+EndCmp
+
+BeginCmp
+TimeStamp = /519A98BB;
+Reference = R3;
+ValeurCmp = 11K;
+IdModule  = SM0805;
+EndCmp
+
+BeginCmp
+TimeStamp = /51A14708;
+Reference = R4;
+ValeurCmp = 11K;
+IdModule  = c_1206;
+EndCmp
+
+BeginCmp
+TimeStamp = /519952DF;
+Reference = U1;
+ValeurCmp = 6N137;
+IdModule  = DIP-8__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /5199570E;
+Reference = U2;
+ValeurCmp = 6N138;
+IdModule  = DIP-8__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /51A13408;
+Reference = U3;
+ValeurCmp = CP2102;
+IdModule  = QFN28;
+EndCmp
+
+EndListe
