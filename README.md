@@ -2,6 +2,20 @@ yamashnik
 =========
 YIS503II MSX-2 MSXNET hardware + software
 
+This package facilitates use of a remote MSX-2 workstation equipped with network 
+module. The only known instance of such workstation is Yamaha YIS503II that used
+to be deployed in Russian schools in the 1980s.
+
+To operate, a hardware adapter is needed for the PC. It's a USB to Serial converter
+with optocouplers needed to connect to MSX workstations. KiCad schematics and PCB
+layout are provided.
+
+The host software supports 3 different modes:
+1. CP/M upload: files can be uploaded to the RAM disk of builtin CP/M into remote machine
+2. BASIC send: BASIC and ROM files can be transferred over network to remote machines
+3. A special version of MSX-DOS can be deployed to the remote machine. Its transfers file system requests to the host machine, which then becomes a file server. Disk based MSX-DOS software can be used using this mode.
+
+
 CONTENTS
 --------
 - `kicad/` USB to MSXNET adapter schematic + PCB layout for home making
