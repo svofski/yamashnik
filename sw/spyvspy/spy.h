@@ -7,7 +7,7 @@
 #include "spydata.h"
 
 #define DEBUGBLOCKSIZE 6
-
+#define EMIT_PACE 4000
 
 class Spy 
 {
@@ -285,26 +285,26 @@ public:
                 transport->SendByte(m_data[datacursor], morbose);
                 datacursor++;
                 txcursor++;
-                usleep(4000);
+                usleep(EMIT_PACE);
                 break;
             case REQ_WORD:
                 transport->SendWord(m_data[datacursor], morbose);
                 datacursor++;
                 txcursor++;
-                usleep(4000);
+                usleep(EMIT_PACE);
                 break;
             case REQ_FCB:
                 transport->SendWord(sizeof(FCB) - 8, morbose);
-                usleep(4000);
+                usleep(EMIT_PACE);
                 transport->SendChunk((uint8_t*)m_FCB, sizeof(FCB) - 8, morbose);
                 txcursor++;
-                usleep(4000);
+                usleep(EMIT_PACE);
                 break;
             case REQ_DMA:
                 transport->SendWord(m_dmasize, morbose);
-                usleep(4000);
+                usleep(EMIT_PACE);
                 transport->SendChunk(m_DMA, m_dmasize, morbose);
-                usleep(4000);
+                usleep(EMIT_PACE);
                 txcursor++;
                 break;
             }

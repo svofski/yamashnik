@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/select.h>
-
+#include <errno.h>
 #include <stdio.h>
 
 #include "serial.h"
@@ -53,6 +53,7 @@ int SerialPort::waitRx()
 {
 	int readfdSet, count = 0;
 	fd_set fdSet;
+	int errcount = 0;
 	struct timeval timeout;
 
 	while(1)
@@ -63,14 +64,21 @@ int SerialPort::waitRx()
 		FD_ZERO(&fdSet);
 		FD_SET(m_fd, &fdSet);
 
-		readfdSet = select(m_fd + 1,
-						&fdSet,
-						(fd_set *) 0,
-						(fd_set *) 0,
-						&timeout);
-
+		while (errcount < 2) {
+			readfdSet = select(m_fd + 1,
+							&fdSet,
+							(fd_set *) 0,
+							(fd_set *) 0,
+							&timeout);
+			if (readfdSet < 0) {
+				info("select(): %s", strerror(errno));
+				errcount++;
+			} else {
+				break;
+			}
+		}
 		if (readfdSet < 0) {
-			eggog("Error in select()\n");
+			eggog("Error in select(): %s\n", strerror(errno));
 		}
 
 		if (readfdSet > 0) {

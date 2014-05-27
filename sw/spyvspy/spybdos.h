@@ -351,6 +351,32 @@ private:
         m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
     }
 
+    void deleteFile() {
+        announce("delete not implemented");
+        m_res->SetAuxData(0, 0xff);
+        m_res->respond((uint8_t[]) {REQ_BYTE, 0});
+    }
+
+    void renameFile() {
+        announce("rename not implemented");
+        m_res->SetAuxData(0, 0xff);
+        m_res->respond((uint8_t[]) {REQ_BYTE, 0});
+    }
+
+    void createFile() {
+        announce("create not implemented");
+        m_res->AssignFCB(m_req->GetFCB());
+        m_res->SetAuxData(0, 0xff);
+        m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
+    }
+
+    void sequentialWrite() {
+        announce("sequential write not implemented");
+        m_res->AssignFCB(m_req->GetFCB());
+        m_res->SetAuxData(0, 0xff);
+        m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
+    }
+
 /*
 http://www.kameli.net/lt/bdos1var.txt 
 
@@ -528,12 +554,10 @@ public:
     }
 
     int test() {
-        
         return test_fileNameFromPCB() 
             && test_FCBFromFileName()
             && test_searchFirst()
             && test_dosglob();
-
     }
 
     int GetBDOSFunc() const { return m_req->GetFunc() + 14; }
@@ -559,15 +583,19 @@ public:
             searchNext();
             break;
         case F13_DELETE:
+            deleteFile();
             break;
         case F14_SEQ_READ:
             sequentialRead();
             break;
         case F15_SEQ_WRITE:
+            sequentialWrite();
             break;
         case F16_CREAT:
+            createFile();
             break;
         case F17_RENAME:
+            renameFile();
             break;
         case F18_GETLOGINVECTOR:
             getLoginVector();

@@ -9,6 +9,9 @@ PUTPNT:		equ $F3F8
 STORESP:	equ $F304
 SLTSL:		equ 0FFFFh		; secondary slot select
 
+SIZEOF_FCB:     equ $2c
+DELAY_SENDWORD: equ 400h 
+
 DEBUG:		equ 0
 
 		org $E900
@@ -439,7 +442,7 @@ Func16_CreateFile:
 Func17_RenameFile:                
                 ld      h, d
                 ld      l, e
-                ld      bc, 20h 
+                ld      bc, SIZEOF_FCB
                 call    bdos_SendDataChunk ; Send data chunk &HL, BC = Length
                 jp      FIFO_ReceiveByteWait
 ; ---------------------------------------------------------------------------
@@ -665,7 +668,7 @@ SendWord:
 		ld 		d, l
 		call 	FIFO_SendByte
                 push    bc
-                ld      bc, 400h
+                ld      bc, DELAY_SENDWORD
                 call    DelayBC
                 pop     bc
 				ret
@@ -701,7 +704,7 @@ SendDebugBlock:
 SendFCB:                          
                 exx
                 ld      hl, (SaveDE)
-                ld      bc, 2Ch ; ','
+                ld      bc, SIZEOF_FCB
                 call    bdos_SendDataChunk ; Send data chunk &HL, BC = Length
                 exx
                 ret

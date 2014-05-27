@@ -237,7 +237,9 @@ void SpyTransport::SendByte(uint8_t b, printfunc p) const
 {
 	if (p) p("%02x ", b);
 	m_serial->SendByte(b);
-	usleep(300);
+	// this value seems to be critical, even though it isn't immediately noticeable
+	// example: zork would not be able to read zork1.dat
+	usleep(300);	
 }
 
 
