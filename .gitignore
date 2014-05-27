@@ -1,6 +1,7 @@
 *.o
 *.swp
 z80asm*
+sw/spyvspy/build/*
 
 kicad/yamashnik.bak
 
