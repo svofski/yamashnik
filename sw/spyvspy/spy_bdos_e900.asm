@@ -135,7 +135,6 @@ SendersAddressKnown:
                 call    WaitUntilByteReceived
 
 WaitUntilCalledByServer:          
-                                        
                 ld      a, 7
 ; ---------------------------------------------------------------------------
                 rst     30h             ; SNSMAT Returns the value of the specified line from the keyboard matrix
@@ -169,9 +168,9 @@ WaitUntilCalledByServer:
                 pop     hl
                 pop     de
                 pop     af
-                call    UpdateCapsLight
+                call    ToggleCAPS
                 call    CustomDispatch ; Dispatch BDOS function in C to custom hooks from DispatchTable
-                call    UpdateCAPS
+                call    RestoreCAPS
                 ei
                 ret
 ; ---------------------------------------------------------------------------
@@ -182,44 +181,49 @@ ClearKeyboardBuffer:
                 pop     de
                 pop     af
                 rst     30h             ; CHGET (Waiting)
-                db 70h
-                dw 9Fh
+                db      70h
+                dw      9Fh
                 ld      hl, (PUTPNT)    ; points to adress to write in the key buffer
                 ld      (GETPNT), hl    ; points to adress to write in the key buffer
                 ld      a, 0FFh
                 ret
 
 ; ****************************************
-; * UpdateCapsLight 
+; * ToggleCAPS 
 ; **************************************** 
-UpdateCapsLight:                  
+; Invert CAPS LED status 
+ToggleCAPS:                  
                 ex      af, af'
-                ld      a, (CAPST)      ; capital status ( 00# = Off / FF# = On )
+                ld      a, (CAPST)      ; a = CAPS status (00 = Off / FF = On)
                 or      a
-                jr      nz, capslock_on
-                jr      capslock_off
-
+                jr      nz, caps_light_off
+                jr      caps_light_on
 
 ; ****************************************
-; * UpdateCAPS 
+; * RestoreCAPS 
 ; **************************************** 
-UpdateCAPS:                       
+; Restore original CAPS LED status
+RestoreCAPS:                       
                 ex      af, af'
                 ld      a, (CAPST)
                 or      a
-                jr      z, capslock_on
+                jr      z, caps_light_off
 
-capslock_off:                     
+                ; PPI command register AB
+                ; Bit 0:        value to set
+                ;     1-3:      bit number within AA
+                ; PPI register C: AA bit 6: keyboard CAPS LED, 1 = off
+                ; BIOS Variable CAPST: 00 = off/FF = on
+caps_light_on:                     
                 ld      (CAPST), a
-                ld      a, 0Ch
-                out     (0ABh), a
+                ld      a, 0Ch          ; AB = 0000 110 0: write 0 to PPI C.6
+                out     (0ABh), a       ; turn CAPS light on
                 ex      af, af'
                 ret
-capslock_on:                      
-                                        ; UpdateCAPS+5
+caps_light_off:
                 ld      (CAPST), a
-                ld      a, 0Dh
-                out     (0ABh), a
+                ld      a, 0Dh          ; AB = 0000 110 1: write 1 to PPI C.6
+                out     (0ABh), a       ; turn CAPS light off
                 ex      af, af'
                 ret
 ;
@@ -302,9 +306,9 @@ Func6_ConsoleIO:
                 ld      a, e
                 jr      nz, Func2_ConsoleOutput ; CHSNS Tests the status of the keyboard buffer
                                         		; Z-flag set if buffer is filled
-				call CONST_unsafe
-				ret z
-				jp CONIN_unsafe
+		call CONST_unsafe
+		ret z
+		jp CONIN_unsafe
 
 ; ****************************************
 ; * Func7_ConsoleInput 
@@ -918,7 +922,7 @@ SaveBC:			dw 0
 Ret1:			dw 0
 Ret2:			dw 0
 ;CAPST:    db 0                    
-                                        ; UpdateCAPS:capslock_off ...
+                                        ; RestoreCAPS:caps_light_on ...
 DispatchTable:dw Func0_ProgramTerminate
                                         
                 dw Func1_ConsoleInput ; CHSNS Tests the status of the keyboard buffer
