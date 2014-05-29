@@ -624,6 +624,7 @@ public:
         case F28_RANDOM_WRITE_ZERO:
             break;
         case F2F_ABS_SECTOR_READ:
+            // used by XDIR
             break;
         case F30_ABS_SECTOR_WRITE:
             break;

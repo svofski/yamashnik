@@ -2,11 +2,12 @@
 
 #include <inttypes.h>
 #include <unistd.h>
+#include <termios.h>
 
 #include "diags.h"
 
 #define BAUDRATE 		38400
-#define SELECT_WAIT		100000
+#define SELECT_WAIT		10000
 
 enum _SIO_ERR {ERR_NONE, ERR_NOFILE, ERR_WTF};
 
@@ -32,7 +33,7 @@ public:
 
 	int Setup();
 
-	void SendByte(unsigned char b) const { write(&b, 1); }
+	void SendByte(unsigned char b) const { write(&b, 1); tcdrain(m_fd);}
 
 	size_t read(uint8_t* buf, size_t len) const;
 	size_t write(uint8_t* buf, size_t len) const;

@@ -12,28 +12,30 @@ SLTSL:		equ 0FFFFh		; secondary slot select
 SIZEOF_FCB:     equ $2c
 DELAY_SENDWORD: equ 400h 
 
-DEBUG:		equ 0
+DEBUG:		        equ 0
+DEBUG_BDOSFUNC:         equ 0 ; 1==1
+DEBUG_STACK:            equ 0
 
 		org $E900
 
 EntryPoint:     jp EntryPoint_
-				jp Init
+		jp Init
 EntryPoint_:               
-                ld		(STORESP), sp
-                ld 		sp, $DC00 
-				push ix
+                ld	(STORESP), sp
+                ld 	sp, $DC00 
+		push ix
                 push iy
 
                 ld      (SaveDE), de
 ;--
-				jr nodebug 
+		jr nodebug 
 
                 ld      (SaveHL), hl
-                ld 		(SaveBC), bc
+                ld      (SaveBC), bc
 
+if DEBUG_STACK
                 ld a, '['
                 call DispCharInA
-
 		ld hl, (STORESP)
 		ld b, 4
 stackloop:
@@ -54,7 +56,19 @@ stackloop:
 		djnz stackloop
                 ld a, ']'
                 call DispCharInA
-
+endif
+if DEBUG_BDOSFUNC
+                ld a, '<'
+                call DispCharInA
+                ld bc, (SaveBC) 
+                call OutHex8            ; print function no
+                ld a, '>'
+                call DispCharInA
+                ld a, 0dh
+                call CONOUT_unsafe
+                ld a, 0ah
+                call CONOUT_unsafe
+endif
                 ld hl, (SaveHL)
                 ld de, (SaveDE)
                 ld bc, (SaveBC)                
@@ -62,9 +76,9 @@ nodebug:
 ;--
 
                 ; put local return address on stack
-                ld		de, ExitPoint
+                ld	de, ExitPoint
                 push 	de
-                ld		de, (SaveDE)
+                ld	de, (SaveDE)
 
                 push    bc
                 ld      b, a
@@ -111,7 +125,8 @@ NoDiskDispatch:
                 jp      CustomDispatch ; Dispatch BDOS function in C to custom hooks from DispatchTable
 ; ---------------------------------------------------------------------------
 
-DiskIOFunc:                       
+DiskIOFunc:              
+                call    ToggleCAPS
                 push    af
                 push    de
                 push    hl
@@ -168,7 +183,7 @@ WaitUntilCalledByServer:
                 pop     hl
                 pop     de
                 pop     af
-                call    ToggleCAPS
+                ;call    ToggleCAPS
                 call    CustomDispatch ; Dispatch BDOS function in C to custom hooks from DispatchTable
                 call    RestoreCAPS
                 ei
@@ -501,7 +516,7 @@ Func1B_GetAllocInfo:
 ; ---------------------------------------------------------------------------
 
 Func21_RandomRead:          
-				call 	SendDebugBlock      
+		call 	SendDebugBlock      
                 call    SendFCB
                 call    ReceiveChunkToDMA
                 call    ReceiveDataToArg
@@ -556,7 +571,7 @@ Func26_RandomBlockWrite:
 ; ---------------------------------------------------------------------------
 
 Func27_RandomBlockRead:  
-				call SendDebugBlock         
+		call SendDebugBlock         
                 push    bc
                 ;ld      bc, 2710h
                 ld      bc, 32h
@@ -763,15 +778,17 @@ FIFO_SendByte_waitrx:
 ; * FIFO_ReceiveByteWait 
 ; **************************************** 
 FIFO_ReceiveByteWait:             
-                                        
                 ld      a, 3
                 out     (9), a
-
-loc_0_EC26:                             
+FIFO_rx_wait:                             
                 in      a, (0Ch)
-                and     83h ; 'Г'
-                cp      80h ; 'А'
-                jr      nz, loc_0_EC26
+                ;and     83h     1000 0011
+                ;cp      80h     1000 0000
+                ;jr      nz, FIFO_rx_wait
+                bit 7, a
+                jr z, FIFO_rx_wait
+                and 3
+                jr nz, FIFO_rx_wait
                 in      a, (0Eh)
                 ret
 
@@ -782,12 +799,11 @@ FIFO_ReceiveByteImmediate:
                 ld      a, 3
                 out     (9), a
                 ld      b, 0FFh
-                in      a, (0Ch)
-                and     83h ; 'Г'
-                cp      80h ; 'А'
-                jr      z, FIFO_ReceiveByteImmediate_wtf
-
-FIFO_ReceiveByteImmediate_wtf:
+;                in      a, (0Ch)
+;                and     83h
+;                cp      80h
+;                jr      z, FIFO_ReceiveByteImmediate_wtf
+;FIFO_ReceiveByteImmediate_wtf:
                 in      a, (0Eh)
                 ret
 
@@ -800,7 +816,7 @@ bdos_SendDataChunk:
 
 bdos_SendDataChunk_sendloop: 
                 push    bc
-                ld      bc, 32h ; '2'
+                ld      bc, 32h
                 call    DelayBC
                 pop     bc
                 ld      d, (hl)
@@ -815,7 +831,6 @@ bdos_SendDataChunk_sendloop:
 
 ; Receive data chunk to &HL, size not returned
 ReceiveDataChunk:                 
-                                        
                 call    FIFO_ReceiveByteWait
                 ld      b, a
                 call    FIFO_ReceiveByteWait
@@ -841,9 +856,6 @@ if DEBUG
 endif
 
 ReceiveDataChunk_recvloop:
-
-				
-
                 call    FIFO_ReceiveByteWait
                 ld      (hl), a
                 inc     hl

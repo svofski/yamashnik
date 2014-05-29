@@ -142,8 +142,9 @@ int Spy::Bootstrap()
 		}
 	}
 
-	usleep(10000);
-	m_serial.waitRx();
+	info("Waiting for remote party...");
+	sleep(1);
+	info("OK\n");
 
 	// Phase 2: upload memories
 	SpyTransport transport(&m_serial);
@@ -239,7 +240,7 @@ void SpyTransport::SendByte(uint8_t b, printfunc p) const
 	m_serial->SendByte(b);
 	// this value seems to be critical, even though it isn't immediately noticeable
 	// example: zork would not be able to read zork1.dat
-	usleep(300);	
+	usleep(150);
 }
 
 

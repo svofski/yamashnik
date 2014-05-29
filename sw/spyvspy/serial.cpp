@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <stdio.h>
 
+
 #include "serial.h"
 #include "diags.h"
 
@@ -21,14 +22,15 @@ int SerialPort::Setup()
 	struct termios oldtio, newtio;
 
 	if (m_fd == -1) return ERR_NOFILE;
-
-    /* Make the file descriptor asynchronous (the manual page says only
-       O_APPEND and O_NONBLOCK, will work with F_SETFL...) */
-    fcntl(m_fd, F_SETFL, FASYNC);
+	
+	// drop O_NONBLOCK, become blocking after having opened
+    fcntl(m_fd, F_SETFL, 0);
 
     tcgetattr(m_fd, &oldtio);
 
     bzero (&newtio, sizeof(newtio));
+    cfmakeraw(&newtio);
+
     newtio.c_cflag = BAUDRATE | CS8 | PARENB | CLOCAL | CREAD;
     newtio.c_iflag = 0;
     newtio.c_oflag = 0;
@@ -36,7 +38,7 @@ int SerialPort::Setup()
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
 
-    newtio.c_cc [VTIME]    = 0;   /* inter-character timer unused */
+    newtio.c_cc [VTIME]    = 10;   /* inter-character timer */
     newtio.c_cc [VMIN]     = 1;   /* blocking read until 1 chars received */
 
   	// the following 2 lines are ESSENTIAL for the code to work on CYGWIN
@@ -53,7 +55,6 @@ int SerialPort::waitRx()
 {
 	int readfdSet, count = 0;
 	fd_set fdSet;
-	int errcount = 0;
 	struct timeval timeout;
 
 	while(1)
@@ -64,22 +65,17 @@ int SerialPort::waitRx()
 		FD_ZERO(&fdSet);
 		FD_SET(m_fd, &fdSet);
 
-		while (errcount < 2) {
-			readfdSet = select(m_fd + 1,
-							&fdSet,
-							(fd_set *) 0,
-							(fd_set *) 0,
-							&timeout);
-			if (readfdSet < 0) {
-				info("select(): %s", strerror(errno));
-				errcount++;
-			} else {
-				break;
-			}
-		}
+		readfdSet = select(m_fd + 1,
+						&fdSet,
+						(fd_set *) 0,
+						(fd_set *) 0,
+						&timeout);
+
 		if (readfdSet < 0) {
-			eggog("Error in select(): %s\n", strerror(errno));
+			info("Error in select(): %s\n", strerror(errno));
 		}
+
+		//info("$ %08x ", readfdSet);
 
 		if (readfdSet > 0) {
 			if (m_RxListener == 0) {
@@ -88,16 +84,10 @@ int SerialPort::waitRx()
 			}
 			if (m_RxListener->RxHandler()) break;
 		}
-
-		count++;
-		usleep(10000);
-
-		if (count == 10) {
-			//morbose("\nwaitRx: failed after %d select()s\n", count);
+		if (++count == 40) {
 			return 0;
 		}
 	}
-	//morbose("\nwaitRx: got reply after %d select()s\n", count);
 	return 1;
 }
 
