@@ -106,10 +106,19 @@ struct FCB {
     }
 
     void GetFileName(char* normalname) {
+        extractFileName(&NameExt[0], normalname);
+    }
+
+    void GetFileName2(char* normalname) {
+        extractFileName((uint8_t *)this + 17, normalname);
+    }
+
+private:
+    void extractFileName(const uint8_t* namext, char* normalname) {
         int i = 0;
-        for (int c; i < 8 && (c = NameExt[i]) != ' '; normalname[i] = c, i++);
+        for (int c; i < 8 && (c = namext[i]) != ' '; normalname[i] = c, i++);
         normalname[i++] = '.';
-        for (int s = 8, c; s < 11 && (c = NameExt[s]) != ' '; normalname[i] = c, i++, s++);
+        for (int s = 8, c; s < 11 && (c = namext[s]) != ' '; normalname[i] = c, i++, s++);
         normalname[i] = 0;
     }
 } __attribute__((packed));

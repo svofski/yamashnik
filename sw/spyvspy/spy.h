@@ -100,7 +100,17 @@ public:
         return cursor[1] | ((uint16_t)cursor[0] << 8);
     }
 
+
+    int NeedsData() const { return m_rxpattern[0] != 0; }
+
+    int consume(uint8_t* buf, int len) {
+        int result = 0;
+        for(; (result = eat(buf, len)) == 0;);
+        return result == 1 ? 1 : 0;
+    }
+private:
     int eat(uint8_t* buf, int len) {
+        int moar = 0;
         int avail = len - m_bufoffset;
 
         uint8_t* cursor = buf + m_bufoffset;
@@ -109,7 +119,7 @@ public:
         if (m_rxpattern[m_rxcursor] == 0) return 1;
 
         // something is expected but nothing is given yet
-        if (avail == 0) return 0;
+        if (avail == 0) return -1;
 
         // check what have we got here
         switch(m_rxpattern[m_rxcursor]) {
@@ -125,9 +135,12 @@ public:
             if (avail >= 2) {   
                 // get word: big endian
                 m_data[m_datacursor] = getWordBigEndian(cursor);
+                morbose("REQ_WORD: %x\n", m_data[m_datacursor]);
                 m_bufoffset += 2;               // advance by 2
                 m_datacursor++;
                 m_rxcursor++;                   // next token
+            } else {
+                moar = -1;
             }
             break;
 
@@ -151,6 +164,8 @@ public:
 
                 morbose("Received NetFCB, next state=%d\n", m_rxpattern[m_rxcursor]);
                 dump(morbose, (uint8_t*) &m_FCB, sizeof(FCB));
+            } else {
+                moar = -1;
             }
             break;
 
@@ -165,7 +180,11 @@ public:
 
                     m_bufoffset += 2 + m_dmasize;
                     m_rxcursor++;
+                } else {
+                    moar = -1;
                 }
+            } else {
+                moar = -1;
             }
             break;
 
@@ -174,11 +193,11 @@ public:
             break;
         }
 
-        // return 1 when reached end of expected pattern
-        return (m_rxpattern[m_rxcursor] == 0) ? 1 : 0;
+        // return 1 when reached end of expected pattern, no more data expected
+        //        -1 when more data needed in buffer
+        //        0 when should be called once again
+        return (m_rxpattern[m_rxcursor] == 0) ? 1 : moar;
     }
-
-    int NeedsData() const { return m_rxpattern[0] != 0; }
 };
 
 

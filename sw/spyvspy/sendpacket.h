@@ -129,7 +129,8 @@ protected:
 	NetFCBPacket(int srcAddr, int dstAddr, PACKETCMD cmd, const char* fileName)
 		: GenericPacket(srcAddr, dstAddr, cmd, sizeof(NetFCB))
 	{
-		AssignData((uint8_t *) &NetFCB(0,0,0, fileName));
+		NetFCB fcb(0,0,0, fileName);
+		AssignData((const uint8_t*) &fcb);
 	}
 public:
 	NetFCBPacket(NetFCBPacket& otro, PACKETCMD cmd)

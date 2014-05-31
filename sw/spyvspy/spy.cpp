@@ -130,7 +130,7 @@ int Spy::Bootstrap()
 		BasicSender basicSender(&m_serial, m_studentNo);
 
 		if (!basicSender.SendCommand("    WIDTH 80:COLOR9,1")) {
-			info("Could not set command\n");
+			info("Could not send command\n");
 			return 0;
 		}
 
@@ -203,6 +203,11 @@ int Spy::Bootstrap()
 }
 
 int Spy::Serve() {
+    if (m_serial.Setup() != ERR_NONE) {
+       info("Spy error: cannot open serial port\n");
+       return 0;
+    }
+
 	SpyTransport transport(&m_serial);
 
 	info("\nServing workstation %d\n", m_studentNo);
@@ -210,9 +215,9 @@ int Spy::Serve() {
 	NetBDOS bdos;
 	SpyRequest request;
 
-	for(;;) {
+	for(int i = 0;; i++) {
 		if (!transport.Poll(m_studentNo)) {
-			morbose(".");
+			info(i & 0 == 0 ? "'\010" : ",\010");
 			continue;
 		}
 
@@ -240,6 +245,7 @@ void SpyTransport::SendByte(uint8_t b, printfunc p) const
 	m_serial->SendByte(b);
 	// this value seems to be critical, even though it isn't immediately noticeable
 	// example: zork would not be able to read zork1.dat
+	// BIOS routines seem to work without artificial pace though. Probably only very long packets fail.
 	usleep(150);
 }
 
@@ -290,10 +296,15 @@ int SpyTransport::RxHandler()
 	case SPY_RXDATA:
 		// read next available portion
 		n = m_serial->read(&m_rxbuf[m_rxpos], 1024);
+		//morbose("\nSPY_RXDATA: read n=%d:", n);
+		//for (int i = 0; i < n; i++) {
+		//	morbose("%02x ", m_rxbuf[m_rxpos + i]);
+		//}
+		//morbose("\n");
 		m_rxpos += n;
 		// consume data: eat will return 1 when receiver state will have reached end of expected data
-		result = m_rq->eat(m_rxbuf, m_rxpos);
-		//morbose("m_rq.eat() returned %d\n", result);
+		result = m_rq->consume(m_rxbuf, m_rxpos);
+		//morbose("m_rq.consume() returned %d\n", result);
 		break;
 
 	default:
@@ -400,7 +411,8 @@ int SpyTransport::ReceiveRequest(SpyRequest* request)
 	case F28_RANDOM_WRITE_ZERO:	// Rx: FCB<>, DMA<>	Tx: FCB<>, byte<result>
 		{m_rq->expect((uint8_t[]){REQ_DMA, REQ_FCB, 0});}
 		break;
-	case F2F_ABS_SECTOR_READ:	// Rx: word<sector number>
+	case F2F_ABS_SECTOR_READ:	// Rx: trash byte
+								//     word<sector number>
 								//     byte<number of sectors to read>
 								//	   byte<drive num 0=A>
 								// Tx: DMA<>

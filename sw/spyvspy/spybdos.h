@@ -2,10 +2,13 @@
 
 #include <inttypes.h>
 #include <glob.h>
+#include <sys/errno.h>
 #include "diags.h"
 #include "spydata.h"
 #include "spy.h"
 #include "dosglob.h"
+
+#define SECTORSIZE 0x200
 
 class NetBDOS
 {
@@ -110,17 +113,6 @@ private:
         announce("search first");
         info(" '%s'\n", filename);
 
-#if 0
-        if (m_globbuf.gl_pathc > 0) {
-            globfree(&m_globbuf);
-        }
-        
-        glob(filename, 0, /* errfunc */0, &m_globbuf);
-
-        morbose("glob() pathc=%d\n", m_globbuf.gl_pathc);
-
-        m_globbor = 0;
-#endif  
         const char* first = m_globor.SearchFirst((const char*) m_req->GetFCB()->NameExt);
 
         DIRENT dirent;
@@ -138,24 +130,8 @@ private:
         int result = 0xff;
 
         announce("search next-");
-#if 0
-        if (m_globbor < m_globbuf.gl_pathc) {
-            morbose("glob() first match=%s\n", m_globbuf.gl_pathv[m_globbor]);
-
-            FCB fcb;
-
-            fcb.SetNameExt(m_globbuf.gl_pathv[m_globbor]);
-            fcb.FileSize = internalGetFileSize(m_globbuf.gl_pathv[m_globbor]);
-
-            dirent.InitFromFCB(&fcb);
-
-            result = 0;
-        } 
-        m_globbor++;
-#endif
 
         const char* next = m_globor.SearchNext();
-
 
         DIRENT dirent;
         FCB fcb;
@@ -352,21 +328,72 @@ private:
     }
 
     void deleteFile() {
-        announce("delete not implemented");
-        m_res->SetAuxData(0, 0xff);
+        announce("delete file");
+
+        char filename[13];
+        m_req->GetFCB()->GetFileName(filename);
+        const char* errmsg = "OK";
+
+        if (unlink(filename) != 0) {
+            errmsg = strerror(errno);
+            m_res->SetAuxData(0, 0xff);
+        } else {
+            m_res->SetAuxData(0, 0);
+        }
+
+        info(": %s: %s", filename, errmsg);
+
         m_res->respond((uint8_t[]) {REQ_BYTE, 0});
     }
 
     void renameFile() {
-        announce("rename not implemented");
+        announce("rename file");
+
+        char filenameFrom[13];
+        char filenameTo[13];
+        m_req->GetFCB()->GetFileName(filenameFrom);
+        m_req->GetFCB()->GetFileName2(filenameTo);
+
+        info(" from=%s to=%s ", filenameFrom, filenameTo);
         m_res->SetAuxData(0, 0xff);
+        if (rename(filenameFrom, filenameTo) == 0) {
+            m_res->SetAuxData(0, 0);
+            info("OK");
+        } else {
+            info(": error: %s", strerror(errno));
+        }
+
         m_res->respond((uint8_t[]) {REQ_BYTE, 0});
     }
 
     void createFile() {
-        announce("create not implemented");
+        announce("create file");
+
+        char filename[13];
+        m_req->GetFCB()->GetFileName(filename);
+
+        uint16_t extent = m_req->GetFCB()->GetExtent();
+
         m_res->AssignFCB(m_req->GetFCB());
+        m_res->GetFCB()->SetExtent(extent);
+
+        info(" %s: extent=%u: ", filename, extent);
+
         m_res->SetAuxData(0, 0xff);
+        if (extent == 0) {
+            // create / overwrite
+            FILE* f = fopen(filename, "w");
+            if (f != 0) {
+                m_res->SetAuxData(0, 0);
+                info("OK");
+                fclose(f);
+            } else {
+                info(": error: %s", strerror(errno));
+            }
+        } else {
+            info("non-zero extent create not supported");
+        }
+
         m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
     }
 
@@ -377,6 +404,19 @@ private:
         m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
     }
 
+    void absSectorRead() {
+        announce("absolute sector read");
+        info(" [sec=%d, count=%d, %c:] not implemented", 
+            m_req->GetAuxData(0),           // sector number 
+            m_req->GetAuxData(1),           // no. of sectors to read
+            'A' + m_req->GetAuxData(2));    // drive
+
+        m_res->AllocDMA(SECTORSIZE * m_req->GetAuxData(1));
+        m_res->SetDMASize(SECTORSIZE * m_req->GetAuxData(1));
+        memset(m_res->GetDMA(), 0, SECTORSIZE * m_req->GetAuxData(1));
+        m_res->respond((uint8_t[]) {REQ_DMA, 0});
+    }
+
 /*
 http://www.kameli.net/lt/bdos1var.txt 
 
@@ -385,10 +425,9 @@ F1AAH-F1BEH     DPB B:
 */
     void getAllocInfo() {
         announce("get allocation information");
+        info(" %c:", 'A' + m_req->GetAuxData(0));
 
-        uint8_t drive = m_req->GetAuxData(0);
         uint8_t dpb[32];
-
         memset(dpb, 0, 32);
 
         m_res->AllocDMA(32);
@@ -397,10 +436,10 @@ F1AAH-F1BEH     DPB B:
 
         m_res->SetAuxData(0, 0xF195);
         m_res->SetAuxData(1, 0xE595);
-        m_res->SetAuxData(2, 0x200);    // BC, sector size
-        m_res->SetAuxData(3, 0x2c9);    // DE, total clusters
-        m_res->SetAuxData(4, 0x2c9);    // HL, free clusters
-        m_res->SetAuxData(5, 2);        // A, sectors per cluster
+        m_res->SetAuxData(2, SECTORSIZE);   // BC, sector size
+        m_res->SetAuxData(3, 0x2c9);        // DE, total clusters
+        m_res->SetAuxData(4, 0x2c9);        // HL, free clusters
+        m_res->SetAuxData(5, 2);            // A, sectors per cluster
 
         m_res->respond((uint8_t[]) {
             /* pointer to DPB */ REQ_WORD,  /* IX  = F195 */
@@ -624,7 +663,7 @@ public:
         case F28_RANDOM_WRITE_ZERO:
             break;
         case F2F_ABS_SECTOR_READ:
-            // used by XDIR
+            absSectorRead();
             break;
         case F30_ABS_SECTOR_WRITE:
             break;

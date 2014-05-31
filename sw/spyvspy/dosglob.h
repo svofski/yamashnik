@@ -57,7 +57,7 @@ public:
         if (Util::dosname(fname, dosname)) {
           //info("["); for (int q = 0; q < 11; q++) info("%c", m_pattern[q]); info("]");
           for (i = 0; 
-                i < sizeof(dosname) &&
+                i < (int)sizeof(dosname) &&
                 (m_pattern[i] == dosname[i] || m_pattern[i] == '?'); 
                 i++);
         }

@@ -24,21 +24,21 @@ int SerialPort::Setup()
 	if (m_fd == -1) return ERR_NOFILE;
 	
 	// drop O_NONBLOCK, become blocking after having opened
-    fcntl(m_fd, F_SETFL, 0);
+    //fcntl(m_fd, F_SETFL, 0);
 
     tcgetattr(m_fd, &oldtio);
 
     bzero (&newtio, sizeof(newtio));
     cfmakeraw(&newtio);
 
-    newtio.c_cflag = BAUDRATE | CS8 | PARENB | CLOCAL | CREAD;
+    newtio.c_cflag = BAUDRATE | CS8 | PARENB | CLOCAL | CREAD;// | CSTOPB;
     newtio.c_iflag = 0;
     newtio.c_oflag = 0;
 
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
 
-    newtio.c_cc [VTIME]    = 10;   /* inter-character timer */
+    newtio.c_cc [VTIME]    = 0;   /* inter-character timer */
     newtio.c_cc [VMIN]     = 1;   /* blocking read until 1 chars received */
 
   	// the following 2 lines are ESSENTIAL for the code to work on CYGWIN
@@ -84,7 +84,7 @@ int SerialPort::waitRx()
 			}
 			if (m_RxListener->RxHandler()) break;
 		}
-		if (++count == 40) {
+		if (++count == 10) {
 			return 0;
 		}
 	}

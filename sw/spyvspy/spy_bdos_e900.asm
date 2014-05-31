@@ -572,20 +572,18 @@ Func26_RandomBlockWrite:
 
 Func27_RandomBlockRead:  
 		call SendDebugBlock         
-                push    bc
-                ;ld      bc, 2710h
-                ld      bc, 32h
-                call    DelayBC
-                pop     bc
+                ;@push    bc
+                ;@ld      bc, 32h
+                ;@call    DelayBC
+                ;@pop     bc
                 ld      d, h
                 call    FIFO_SendByte
                 ld      d, l
                 call    FIFO_SendByte
-                push    bc
-                ;ld      bc, 2710h
-                ld      bc, 32h
-                call    DelayBC
-                pop     bc
+                ;@push    bc
+                ;@ld      bc, 32h
+                ;@call    DelayBC
+                ;@pop     bc
                 call    SendFCB
                 call    FIFO_ReceiveByteWait
                 ld      h, a
@@ -614,9 +612,9 @@ Func28_RandomWriteWithZeroFill:
 ; ---------------------------------------------------------------------------
 
 Func2A_GetDate:          
-				xor a, a   
-				ld h, a
-				ld l, a      
+		xor a, a   
+		ld h, a
+		ld l, a      
                 ld d, a
                 ld e, a
                 ret
@@ -642,15 +640,15 @@ Func2E_SetResetVerifyFlag:
                 ret                     ; nop
 ; ---------------------------------------------------------------------------
 
-Func2F_AbsoluteSectorRead:        
-;                call    FIFO_SendByte
-;                ld      d, e
-;                call    FIFO_SendByte
-;                ld      d, h
-;                call    FIFO_SendByte
-;                ld      d, l
-;                call    FIFO_SendByte
-;                jp      ReceiveChunkToDMA
+Func2F_AbsoluteSectorRead:   
+                call    FIFO_SendByte
+                ld      d, e
+                call    FIFO_SendByte
+                ld      d, h
+                call    FIFO_SendByte
+                ld      d, l
+                call    FIFO_SendByte
+                jp      ReceiveChunkToDMA
 ; ---------------------------------------------------------------------------
 
 Func30_AbsoluteSectorWrite: 
@@ -682,15 +680,15 @@ FuncXX_NoOperation:
 		ret
 
 SendWord:
-		ld 		d, h
+		ld 	d, h
 		call    FIFO_SendByte
-		ld 		d, l
+		ld 	d, l
 		call 	FIFO_SendByte
-                push    bc
-                ld      bc, DELAY_SENDWORD
-                call    DelayBC
-                pop     bc
-				ret
+                ;@push    bc
+                ;@ld      bc, DELAY_SENDWORD
+                ;@call    DelayBC
+                ;@pop     bc
+		ret
 
 SendDebugBlock:
 		exx
@@ -815,10 +813,10 @@ bdos_SendDataChunk:
                 call    FIFO_SendByte
 
 bdos_SendDataChunk_sendloop: 
-                push    bc
-                ld      bc, 32h
-                call    DelayBC
-                pop     bc
+                ;@push    bc
+                ;@ld      bc, 32h
+                ;@call    DelayBC
+                ;@pop     bc
                 ld      d, (hl)
                 call    FIFO_SendByte
                 inc     hl
