@@ -15,14 +15,28 @@ class NetBDOS
 private:
     int m_disk;
     glob_t m_globbuf;
-    //unsigned int m_globbor;
     Globor m_globor;
 
     SpyRequest* m_req;
     SpyResponse* m_res;
+    int m_lastRequest;
 
     void announce(const char* functionName) {
         info("\033[1mNetBDOS %02X\033[0m: %s", GetBDOSFunc(), functionName);
+    }
+
+    void newlineIfNewFunc() {
+        if (m_lastRequest != GetBDOSFunc()) {
+            m_lastRequest = GetBDOSFunc();
+            info("\n");
+        } else {
+            info("\r\033[K");
+        }
+    }
+
+    void newline() {
+        m_lastRequest = GetBDOSFunc();
+        info("\n");
     }
 
     int internalGetFileSize(const char* filename) {
@@ -40,12 +54,14 @@ private:
 
     void selectDisk() {
         int d = m_req->GetAuxData(0);
-        announce("select disk");
+        newlineIfNewFunc();
+        announce("select disk ");
         if (d >= 0 && d <= 8) {
-            info(" %c:\n", 'A' + m_disk);
+            info(" %c:", 'A' + m_disk);
         } else {
-            info(" <probing drives>\n");
+            info(" <probing drives>");
         }
+        verbose("\n");
         m_res->SetAuxData(0, 0x01); // number of available drives
         m_res->respond((uint8_t[]){REQ_BYTE, 0});
     }
@@ -54,6 +70,7 @@ private:
         char filename[13];
         m_req->GetFCB()->GetFileName(filename);
 
+        newlineIfNewFunc();
         announce("open file");
         info(" '%s' ", filename);
 
@@ -86,7 +103,7 @@ private:
 
         fclose(f);
 
-        info("\n");
+        verbose("\n");
 
         m_res->respond((uint8_t[]){REQ_FCB, REQ_BYTE, 0});
     }
@@ -94,15 +111,19 @@ private:
     void closeFile() {
         char filename[13];
         m_req->GetFCB()->GetFileName(filename);
+        newline();
         announce("close file");
-        info(" '%s'\n", filename);
+        info(" '%s'", filename);
+        verbose("\n");
         m_res->SetAuxData(0, 0x00);
         m_res->respond((uint8_t[]){REQ_BYTE, 0});
     }
 
     void getCurrentDrive() {
+        newline();
         announce("get current drive");
-        info(" Result: %02x\n", m_disk);
+        info(" %c:", 'A' + m_disk);
+        verbose("\n");
         m_res->SetAuxData(0, m_disk);
         m_res->respond((uint8_t[]){REQ_BYTE, 0});
     }
@@ -110,8 +131,11 @@ private:
     void searchFirst() {
         char filename[13];
         m_req->GetFCB()->GetFileName(filename);
-        announce("search first");
-        info(" '%s'\n", filename);
+
+        newline();
+        announce("search first: ");
+        info(" '%s'", filename);
+        verbose("\n");
 
         const char* first = m_globor.SearchFirst((const char*) m_req->GetFCB()->NameExt);
 
@@ -129,9 +153,13 @@ private:
     void searchNext() {
         int result = 0xff;
 
-        announce("search next-");
+        newlineIfNewFunc();
+        announce("search next: ");
 
         const char* next = m_globor.SearchNext();
+
+        info("'%s'", next ? next : "<end>");
+        verbose("\n");
 
         DIRENT dirent;
         FCB fcb;
@@ -149,6 +177,7 @@ private:
     void randomBlockRead() {
         char filename[13];
 
+        newlineIfNewFunc();
         announce("random block read");
 
         m_req->GetFCB()->GetFileName(filename);
@@ -189,7 +218,7 @@ private:
             m_res->SetAuxData(1, 0);           // no error
             m_res->GetFCB()->RandomRecord += recordsread;
         } while(0);
-        info("\n");
+        verbose("\n");
 
         fclose(f);
         m_res->respond((uint8_t[]){REQ_WORD, REQ_DMA, REQ_FCB, REQ_BYTE, 0});
@@ -206,6 +235,7 @@ private:
 
         m_res->AssignFCB(m_req->GetFCB());
 
+        newlineIfNewFunc();
         announce("random read");
         info(" '%s' Rec=%d Ofs=%d", filename, recordno, recordno*recordsize);
 
@@ -249,18 +279,19 @@ private:
             m_res->GetFCB()->SetExtent(fileoffset / extentsize);
         } while(0);
         fclose(f);
-        info("\n");
+
+        verbose("\n");
 
         m_res->respond((uint8_t[]){REQ_DMA, REQ_FCB, REQ_BYTE, 0});
     }
 
     void sequentialRead() {
+        newlineIfNewFunc();
         announce("sequential read");
         char filename[13];
         int recordsize = 128;
         m_req->GetFCB()->GetFileName(filename);
         
-
         uint32_t recordno = m_req->GetFCB()->CurrentRecord;
         uint32_t extent = m_req->GetFCB()->GetExtent();
 
@@ -269,7 +300,7 @@ private:
 
         m_res->AssignFCB(m_req->GetFCB());
 
-        info(" '%s' Rec=%d Ofs=%zd\n", filename, recordno, fileoffset);
+        info(" '%s' Rec=%d Ofs=%zd ", filename, recordno, fileoffset);
 
         // Always return a full record, padded with zeroes if EOF
         m_res->AllocDMA(recordsize);
@@ -300,24 +331,26 @@ private:
             m_res->GetFCB()->CurrentRecord = 0;
             m_res->GetFCB()->SetExtent(m_res->GetFCB()->GetExtent() + 1);
         }
-        verbose(" advance: record no=%d", m_res->GetFCB()->CurrentRecord);
-        info("\n");
+        verbose(" advance: rec=%d ext=%d", m_res->GetFCB()->CurrentRecord, m_res->GetFCB()->GetExtent());
+        verbose("\n");
 
         m_res->respond((uint8_t[]){REQ_DMA, REQ_FCB, REQ_BYTE, 0});
     }
 
     void getLoginVector() {
+        newline();
         announce("get login vector");
-        info("\n");
+        verbose("\n");
         m_res->SetAuxData(0, 0x0001); // LSB corresponds to drive A
         m_res->respond((uint8_t[]){REQ_WORD, 0});
     }
 
     void getFileSize() {
-        char filename[13];
-
+        newline();
         announce("get file size");
+        verbose("\n");
 
+        char filename[13];
         m_req->GetFCB()->GetFileName(filename);
         int size = internalGetFileSize(filename);
         m_res->AssignFCB(m_req->GetFCB());
@@ -328,6 +361,7 @@ private:
     }
 
     void deleteFile() {
+        newline();
         announce("delete file");
 
         char filename[13];
@@ -342,11 +376,13 @@ private:
         }
 
         info(": %s: %s", filename, errmsg);
+        verbose("\n");
 
         m_res->respond((uint8_t[]) {REQ_BYTE, 0});
     }
 
     void renameFile() {
+        newline();
         announce("rename file");
 
         char filenameFrom[13];
@@ -360,13 +396,15 @@ private:
             m_res->SetAuxData(0, 0);
             info("OK");
         } else {
-            info(": error: %s", strerror(errno));
+            info(": %s", strerror(errno));
         }
+        verbose("\n");
 
         m_res->respond((uint8_t[]) {REQ_BYTE, 0});
     }
 
     void createFile() {
+        newline();
         announce("create file");
 
         char filename[13];
@@ -388,29 +426,82 @@ private:
                 info("OK");
                 fclose(f);
             } else {
-                info(": error: %s", strerror(errno));
+                info(": %s", strerror(errno));
             }
         } else {
-            info("non-zero extent create not supported");
+            info("error: non-zero extent create not supported");
         }
+        verbose("\n");
 
         m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
     }
 
+    // Rx: FCB<>, DMA<>  Tx: FCB<>, byte<result>
     void sequentialWrite() {
-        announce("sequential write not implemented");
+        newlineIfNewFunc();
+        announce("sequential write");
+
+        char filename[13];
+        int recordsize = 128;
+        m_req->GetFCB()->GetFileName(filename);
+        
+        uint32_t recordno = m_req->GetFCB()->CurrentRecord;
+        uint32_t extent = m_req->GetFCB()->GetExtent();
+
+                           /* extent base */           /* record */
+        off_t fileoffset = 128 * recordsize * extent + recordno * recordsize;
+
+        info(" '%s' Rec=%d Ofs=%zd Size=%d", filename, recordno, fileoffset, m_req->GetDMASize());
+
         m_res->AssignFCB(m_req->GetFCB());
-        m_res->SetAuxData(0, 0xff);
+        m_res->SetAuxData(0,1); // result: 01 = error, 0 if ok
+
+        FILE* f = fopen(filename, "r+");
+        do {
+            if (f == 0) {
+                info(strerror(errno));
+                break;
+            }
+            if ((fileoffset > m_req->GetFCB()->FileSize) ||
+                (fseek(f, fileoffset, SEEK_SET) != 0) ||
+                (ftell(f) != fileoffset)) {
+                info("<eof>");
+                break;
+            }
+            size_t written = fwrite(m_req->GetDMA(), 1, recordsize, f);
+            m_res->SetAuxData(0, (written == (size_t)(m_req->GetDMASize())) ? 0 : 1);
+        } while(0);
+        fclose(f);
+
+        m_res->GetFCB()->RecordSizeLo = 0;
+        m_res->GetFCB()->RecordSizeHi = recordsize;
+
+        if (fileoffset + recordsize > m_res->GetFCB()->FileSize)
+            m_res->GetFCB()->FileSize = fileoffset + recordsize;
+
+        m_res->GetFCB()->CurrentRecord = m_res->GetFCB()->CurrentRecord + 1;
+        if (m_res->GetFCB()->CurrentRecord == 0x80) {
+            m_res->GetFCB()->CurrentRecord = 0;
+            m_res->GetFCB()->SetExtent(m_res->GetFCB()->GetExtent() + 1);
+        }
+        verbose(" advance: rec=%d ext=%d", m_res->GetFCB()->CurrentRecord, m_res->GetFCB()->GetExtent());
+        verbose("\n");
+
         m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
+    }
+
+    void randomWrite() {
+        
     }
 
     void absSectorRead() {
+        newlineIfNewFunc();
         announce("absolute sector read");
         info(" [sec=%d, count=%d, %c:] not implemented", 
             m_req->GetAuxData(0),           // sector number 
             m_req->GetAuxData(1),           // no. of sectors to read
             'A' + m_req->GetAuxData(2));    // drive
-
+        verbose("\n");
         m_res->AllocDMA(SECTORSIZE * m_req->GetAuxData(1));
         m_res->SetDMASize(SECTORSIZE * m_req->GetAuxData(1));
         memset(m_res->GetDMA(), 0, SECTORSIZE * m_req->GetAuxData(1));
@@ -424,6 +515,7 @@ F195H-F1A9H     Driver Parameter Block (DPB) A:
 F1AAH-F1BEH     DPB B:
 */
     void getAllocInfo() {
+        newline();
         announce("get allocation information");
         info(" %c:", 'A' + m_req->GetAuxData(0));
 
@@ -585,8 +677,7 @@ private:
     }
 
 public:
-    NetBDOS() : m_disk(0), m_globor(".") {
-        //m_globbuf.gl_pathc = 0;
+    NetBDOS() : m_disk(0), m_globor("."), m_lastRequest(-1) {
     }
 
     ~NetBDOS() {
@@ -649,6 +740,7 @@ public:
             randomRead();
             break;
         case F22_RANDOM_WRITE:
+            randomWrite();
             break;
         case F23_GET_FILE_SIZE:
             getFileSize();

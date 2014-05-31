@@ -13,7 +13,7 @@ int pingPong(PacketSender& ps, int adr)
     do {
         ps.SendPacketVal(ping);
     } while (!ps.ReceivePacket());
-    verbose("PONG\n");
+    info("PONG from %d\n", adr);
     return 1;
 }
 

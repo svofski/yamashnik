@@ -217,7 +217,7 @@ int Spy::Serve() {
 
 	for(int i = 0;; i++) {
 		if (!transport.Poll(m_studentNo)) {
-			info(i & 0 == 0 ? "'\010" : ",\010");
+			info(i & 0 == 0 ? "'\010" : "`\010");
 			continue;
 		}
 
