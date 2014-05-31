@@ -17,6 +17,7 @@
 #include "commands.h"
 #include "serial.h"
 #include "diags.h"
+#include "util.h"
 
 #include "spybdos.h"
 #include "basicsend.h"
@@ -191,7 +192,8 @@ int main(int argc, char *argv[]) {
             case 9:
                 {
                     NetBDOS bdos;
-                    bdos.test();
+                    Util::testSuite() &&
+                        bdos.testSuite();
                     workdone = 1;
                 }
                 break;

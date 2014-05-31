@@ -6,6 +6,7 @@
 #include "serial.h"
 #include "commands.h"
 #include "diags.h"
+#include "util.h"
 
 #include <stdlib.h>
 
@@ -23,21 +24,9 @@ typedef struct _xdata {
 
     _xdata(uint8_t _H, uint8_t _F, uint8_t _A, const char* fileName) : H(_H), F(_F), A(_A)
     {
+    	memset(&FCB[0], 0, sizeof(FCB));
 	    FCB[0] = 8;
-    	memset(&FCB[1], ' ', 11);
-
-    	int i, fi, flen;
-	    // Let's copy the filename
-	    for (i = 0, fi = 1, flen = strlen(fileName); i < 8 && i < flen && fileName[i] != '.'; i++, fi++) {
-	        FCB[fi] = toupper(fileName[i]);
-	    }
-	    if (fileName[i] == '.') i++;
-	    fi = 1 + 8;
-
-	    for(; fi < 12 && i < flen; i++, fi++) {
-	    	FCB[fi] = toupper(fileName[i]);
-	    }
-    	memset(&FCB[12], 0, sizeof(FCB) - 12);
+	    Util::dosname(fileName, (char *) &FCB[1]);
     }
 } NetFCB;
 

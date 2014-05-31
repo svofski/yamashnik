@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ctype.h>
+#include "util.h"
 
 enum SpyRequestCode {
     F0E_SELECT_DISK         = 0,                    
@@ -32,33 +32,6 @@ enum SpyRequestCode {
 
 enum {
     REQ_BYTE = 1, REQ_WORD, REQ_FCB, REQ_DMA, REQ_END = 0,
-};
-
-class Util {
-public:
-    static int dosname(const char* fname, char* buf83) {
-        if (fname == 0 || buf83 == 0) return 0;
-        
-        char* shrt = (shrt = strrchr(fname, '/')) ? (shrt + 1) : (char *)fname;
-
-        char* dot = strchr(shrt, '.');
-        int namelen = dot == 0 ? strlen(shrt) : dot - shrt;
-        int extlen = strlen(shrt) - namelen - 1;
-        if (namelen > 8 || extlen > 3) {
-            return 0;
-        }
-
-        memset(buf83, ' ', 11);
-
-        for (int i = 0; i < namelen; i++) {
-            buf83[i] = (char) toupper(shrt[i]);
-        }
-        for (int i = 0; i < extlen; i++) {
-            buf83[8+i] = (char) toupper(shrt[namelen + i + 1]);
-        }
-
-        return 1;
-    }
 };
 
 struct FCB {

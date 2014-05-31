@@ -51,7 +51,7 @@ int SerialPort::Setup()
     return ERR_NONE;
 }
 
-int SerialPort::waitRx()
+int SerialPort::waitRx(const int intents)
 {
 	int readfdSet, count = 0;
 	fd_set fdSet;
@@ -84,7 +84,7 @@ int SerialPort::waitRx()
 			}
 			if (m_RxListener->RxHandler()) break;
 		}
-		if (++count == 10) {
+		if (++count == intents) {
 			return 0;
 		}
 	}

@@ -690,7 +690,7 @@ public:
     ~NetBDOS() {
     }
 
-    int test() {
+    int testSuite() {
         return test_fileNameFromPCB() 
             && test_FCBFromFileName()
             && test_searchFirst()

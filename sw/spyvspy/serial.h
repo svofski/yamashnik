@@ -42,5 +42,5 @@ public:
 		m_RxListener = listener;
 	};
 
-	int waitRx();
+	int waitRx(const int intents = 10);
 };

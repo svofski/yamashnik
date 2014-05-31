@@ -5,7 +5,7 @@ CPP=g++
 LINK=g++
 
 BUILDDIR=build
-MSXNET_CFILES=msxnet.cpp serial.cpp ncopy.cpp sendpacket.cpp diags.c basicsend.cpp spy.cpp
+MSXNET_CFILES=msxnet.cpp serial.cpp ncopy.cpp sendpacket.cpp diags.c basicsend.cpp spy.cpp util.cpp
 
 MSXNET_OFILES = $(foreach CFILE, $(MSXNET_CFILES), $(BUILDDIR)/$(basename $(notdir $(CFILE))).o)
 

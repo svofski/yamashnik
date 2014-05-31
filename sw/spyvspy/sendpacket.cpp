@@ -150,7 +150,7 @@ void PacketSender::SendPacketVal(GenericPacket& packet)
 
 int PacketSender::ReceivePacket() {
     pos = 0;
-    return serial->waitRx();
+    return serial->waitRx(50);
 }
 
 void PacketSender::CheckPacket() {

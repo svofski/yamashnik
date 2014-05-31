@@ -72,7 +72,7 @@ unsigned char binBuf[SIZE32K + sizeof(ROM2BIN_startCode)];  // enough for any bl
 
 void BasicSender::sendBlocks(int start, int end)
 {
-	static const char progressChar[] = "_,-'\".*oO0";
+	static const char progressChar[] = "...--oo*OO0";
     int lastblock = (end - start) / MAXBLKSIZE;
 
     info("%d blocks to send\n", lastblock);
@@ -84,7 +84,7 @@ void BasicSender::sendBlocks(int start, int end)
         verbose("\nSending block %d (", i + 1);
 
         if ((i+1) % 10 == 0) {
-            info("%d%c", i + 1, ((i+1) % 100 == 0) ? '\n' : ' ');
+            info("%3d%c", i + 1, ((i+1) % 100 == 0) ? '\n' : ' ');
         } 
         else {
             info("%c\010", progressChar[i % 10]);  //_,-'"
