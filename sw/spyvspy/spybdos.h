@@ -436,20 +436,29 @@ private:
         m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
     }
 
-    // Rx: FCB<>, DMA<>  Tx: FCB<>, byte<result>
-    void sequentialWrite() {
+
+    // sequential: Rx: FCB<>, DMA<>  Tx: FCB<>, byte<result> (advance record)
+    // random:     Rx: FCB<>, DMA<>  Tx: byte<result>
+    void randomWrite(int sequential) {
         newlineIfNewFunc();
-        announce("sequential write");
+        announce(sequential ? "sequential write" : "random write");
 
         char filename[13];
         int recordsize = 128;
         m_req->GetFCB()->GetFileName(filename);
         
-        uint32_t recordno = m_req->GetFCB()->CurrentRecord;
-        uint32_t extent = m_req->GetFCB()->GetExtent();
-
+        off_t fileoffset;
+        uint32_t recordno;
+        if (sequential) {
+            recordno = m_req->GetFCB()->CurrentRecord;
+            uint32_t extent = m_req->GetFCB()->GetExtent();
                            /* extent base */           /* record */
-        off_t fileoffset = 128 * recordsize * extent + recordno * recordsize;
+             fileoffset = 128 * recordsize * extent + recordno * recordsize;
+         } else {
+            recordno = m_req->GetFCB()->RandomRecord;
+            recordno = recordno & 0x00ffffff;
+            fileoffset = recordno * recordsize;
+         }
 
         info(" '%s' Rec=%d Ofs=%zd Size=%d", filename, recordno, fileoffset, m_req->GetDMASize());
 
@@ -462,10 +471,8 @@ private:
                 info(strerror(errno));
                 break;
             }
-            if ((fileoffset > m_req->GetFCB()->FileSize) ||
-                (fseek(f, fileoffset, SEEK_SET) != 0) ||
-                (ftell(f) != fileoffset)) {
-                info("<eof>");
+            if (fseek(f, fileoffset, SEEK_SET) != 0) {
+                info(" error: could not seek to %u ", fileoffset);
                 break;
             }
             size_t written = fwrite(m_req->GetDMA(), 1, recordsize, f);
@@ -487,11 +494,11 @@ private:
         verbose(" advance: rec=%d ext=%d", m_res->GetFCB()->CurrentRecord, m_res->GetFCB()->GetExtent());
         verbose("\n");
 
-        m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
-    }
-
-    void randomWrite() {
-        
+        if (sequential) {
+            m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
+        } else {
+            m_res->respond((uint8_t[]) {REQ_BYTE, 0});
+        }
     }
 
     void absSectorRead() {
@@ -719,7 +726,7 @@ public:
             sequentialRead();
             break;
         case F15_SEQ_WRITE:
-            sequentialWrite();
+            randomWrite(1);
             break;
         case F16_CREAT:
             createFile();
@@ -740,7 +747,7 @@ public:
             randomRead();
             break;
         case F22_RANDOM_WRITE:
-            randomWrite();
+            randomWrite(0);
             break;
         case F23_GET_FILE_SIZE:
             getFileSize();
