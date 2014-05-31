@@ -197,9 +197,7 @@ int Spy::Bootstrap()
 
 	sleep(1);
 
-	Serve();
-
-	return 1;
+	return Serve();
 }
 
 int Spy::Serve() {

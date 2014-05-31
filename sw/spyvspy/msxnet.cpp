@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
                     spy.initData() &&
                         spy.Serve();
                 }
-
+                break;
             case 9:
                 {
                     NetBDOS bdos;
