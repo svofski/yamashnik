@@ -39,7 +39,8 @@ BDOSVEC_HI:	equ 7
     ld c, a
     call OutHex8
 
-    rst 0
+    ; this exits ok rst 0
+    ret
 
     jp TestMovingToHiMem
 

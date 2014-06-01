@@ -242,17 +242,22 @@ private:
     FCB*        m_FCB;
     uint8_t*    m_DMA;
     int         m_dmasize;
+
+    uint8_t*    m_DMA2;
+    int         m_dma2size;
+
     int         m_data[8];
     uint8_t     m_result;
 
     uint8_t* m_txpattern;
 
 public:
-    SpyResponse() : m_FCB(0), m_DMA(0) {}
+    SpyResponse() : m_FCB(0), m_DMA(0), m_DMA2(0) {}
 
     ~SpyResponse() {
         if (m_FCB) delete m_FCB;
         if (m_DMA) delete[] m_DMA;
+        if (m_DMA2) delete[] m_DMA2;
         if (m_txpattern) delete[] m_txpattern;
     }
 
@@ -279,11 +284,26 @@ public:
         m_dmasize = n;
     }
 
+    int GetDMASize() const {
+        return m_dmasize;
+    }
+
+    int GetDMA2Size() const {
+        return m_dma2size;
+    }
+
     void AssignDMA(const uint8_t *data, int length) {
         if (m_DMA) delete[] m_DMA;
         m_dmasize = length;
         m_DMA = new uint8_t[m_dmasize];
         memcpy(m_DMA, data, m_dmasize);
+    }
+
+    void AssignDMA2(const uint8_t *data, int length) {
+        if (m_DMA2) delete[] m_DMA2;
+        m_dma2size = length;
+        m_DMA2 = new uint8_t[m_dma2size];
+        memcpy(m_DMA2, data, m_dma2size);
     }
 
     void SetAuxData(uint8_t idx, int value)  {
@@ -323,6 +343,13 @@ public:
                 transport->SendWord(m_dmasize, morbose);
                 usleep(EMIT_PACE);
                 transport->SendChunk(m_DMA, m_dmasize, morbose);
+                usleep(EMIT_PACE);
+                txcursor++;
+                break;
+            case REQ_DMA2:
+                transport->SendWord(m_dma2size, morbose);
+                usleep(EMIT_PACE);
+                transport->SendChunk(m_DMA2, m_dma2size, morbose);
                 usleep(EMIT_PACE);
                 txcursor++;
                 break;

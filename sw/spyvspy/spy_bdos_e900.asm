@@ -472,36 +472,37 @@ Func1A_SetDMA:
                 ret
 ; ---------------------------------------------------------------------------
 
-Func1B_GetAllocInfo:       
+Func1B_GetAllocInfo:
                 ld      d, e
                 call    FIFO_SendByte
-                call    FIFO_ReceiveByteWait
+                call    FIFO_ReceiveByteWait    ; address to receive next chunk (DPB): 0xF195
                 ld      h, a
                 call    FIFO_ReceiveByteWait
                 ld      l, a
                 push    hl
-                pop     ix
-                call    ReceiveDataChunk 
-                call    FIFO_ReceiveByteWait
+                pop     ix                      ; IX = pointer to DPB
+                call    ReceiveDataChunk        ; DPB<0xf3>
+
+                call    FIFO_ReceiveByteWait    ; address to receive next chunk (FAT): 0xE595
                 ld      h, a
                 call    FIFO_ReceiveByteWait
                 ld      l, a
                 push    hl
-                pop     iy
-                call    ReceiveDataChunk 
-                call    FIFO_ReceiveByteWait
+                pop     iy                      ; IY = pointer to the first sector of FAT
+                call    ReceiveDataChunk        ; receive first sector of FAT
+                call    FIFO_ReceiveByteWait    ; BC = word secor size (always 512)
                 ld      b, a
                 call    FIFO_ReceiveByteWait
                 ld      c, a
-                call    FIFO_ReceiveByteWait
+                call    FIFO_ReceiveByteWait    ; DE = total clusters
                 ld      d, a
                 call    FIFO_ReceiveByteWait
                 ld      e, a
-                call    FIFO_ReceiveByteWait
+                call    FIFO_ReceiveByteWait    ; HL = free clusters
                 ld      h, a
                 call    FIFO_ReceiveByteWait
                 ld      l, a
-                jp      FIFO_ReceiveByteWait
+                jp      FIFO_ReceiveByteWait    ; sectors per cluster
 ; ---------------------------------------------------------------------------
 
 Func21_RandomRead:          

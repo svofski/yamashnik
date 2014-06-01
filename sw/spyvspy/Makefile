@@ -16,11 +16,13 @@ clean:
 
 $(BUILDDIR)/msxnet: $(MSXNET_OFILES)
 
+$(BUILDDIR)/msxnet.o:	*.h
+
 $(BUILDDIR)/serial.o:	serial.h
 
 $(BUILDDIR)/sendpacket.o:	sendpacket.h
 
-$(BUILDDIR)/spy.o:	spy*.h spybdos.h dosglob.h
+$(BUILDDIR)/spy.o:	spy*.h spybdos.h dosglob.h spydata.h
 
 $(BUILDDIR)/tpa.com:	tpa.asm
 	../z80asm-1.8/z80asm -I../z80asm-1.8/headers/ tpa.asm -o $@

@@ -39,15 +39,20 @@ private:
         info("\n");
     }
 
-    int internalGetFileSize(const char* filename) {
-        FILE* f = fopen(filename, "rb");
-        if (f == 0) return -1;
-
+    int internalGetFileSize(FILE* f) {
         fseek(f, 0, SEEK_END);
         long pos = ftell(f);
         if (pos > 737820) {
             pos = 737820;
         }
+        return pos;
+    }
+
+    int internalGetFileSize(const char* filename) {
+        FILE* f = fopen(filename, "rb");
+        if (f == 0) return -1;
+        int pos = internalGetFileSize(f);
+        fclose(f);
 
         return pos;
     }
@@ -64,6 +69,20 @@ private:
         verbose("\n");
         m_res->SetAuxData(0, 0x01); // number of available drives
         m_res->respond((uint8_t[]){REQ_BYTE, 0});
+    }
+
+    void zeroFCBFields(FCB* fcb) {
+        fcb->RandomRecord = 0;
+        fcb->Date = 0;
+        fcb->Time = 0;
+        fcb->DirectoryLocation = 0;
+        fcb->TopCluster = 0;
+        fcb->LastClusterAccessed = 0;
+        fcb->RelativeLocation = 0;
+        fcb->CurrentRecord = 0;
+        fcb->SetExtent(0);
+        fcb->RecordSizeLo = 128;
+        fcb->RecordSizeHi = 0;
     }
 
     void openFile() {
@@ -85,17 +104,9 @@ private:
             } 
 
             m_res->GetFCB()->Drive = m_disk + 1;
-
-            fseek(f, 0, SEEK_END);
-            long pos = ftell(f);
-            if (pos > 737820) {
-                pos = 737820;
-            }
-
-            m_res->GetFCB()->FileSize = pos;
+            m_res->GetFCB()->FileSize = internalGetFileSize(f);
             m_res->GetFCB()->DeviceId = 0x40 + m_disk;
-            m_res->GetFCB()->RandomRecord = 0;
-
+            
             m_res->SetAuxData(0, 0x0);
 
             info(" size=%d", m_res->GetFCB()->FileSize);
@@ -144,6 +155,7 @@ private:
         fcb.SetNameExt(first);
         fcb.FileSize = internalGetFileSize(first);
         dirent.InitFromFCB(&fcb);
+        dirent.SetDateTime(first);
 
         m_res->AssignDMA((uint8_t *)&dirent, sizeof(DIRENT));
         m_res->SetAuxData(0, first ? 0 : 0xff);
@@ -166,6 +178,7 @@ private:
         fcb.SetNameExt(next);
         fcb.FileSize = internalGetFileSize(next);
         dirent.InitFromFCB(&fcb);
+        dirent.SetDateTime(next);
         result = next ? 0 : 0xff;
 
         m_res->AssignDMA((uint8_t *)&dirent, sizeof(DIRENT));
@@ -526,15 +539,16 @@ F1AAH-F1BEH     DPB B:
         announce("get allocation information");
         info(" %c:", 'A' + m_req->GetAuxData(0));
 
-        uint8_t dpb[32];
-        memset(dpb, 0, 32);
+        //uint8_t dpb[32];
+        //memset(dpb, 0, 32);
+        DPB dpb;
+        uint8_t fat[512];
 
-        m_res->AllocDMA(32);
-        m_res->SetDMASize(32);
-        m_res->AssignDMA((uint8_t *)dpb, 32);
+        m_res->AssignDMA((uint8_t *)&dpb, sizeof(DPB));
+        m_res->AssignDMA2(&fat[0], 512);
 
-        m_res->SetAuxData(0, 0xF195);
-        m_res->SetAuxData(1, 0xE595);
+        m_res->SetAuxData(0, 0xF195);       // address of DPB in MSX-DOS area
+        m_res->SetAuxData(1, 0xE595);       // address of first FAT sector in MSX-DOS area
         m_res->SetAuxData(2, SECTORSIZE);   // BC, sector size
         m_res->SetAuxData(3, 0x2c9);        // DE, total clusters
         m_res->SetAuxData(4, 0x2c9);        // HL, free clusters
@@ -544,7 +558,7 @@ F1AAH-F1BEH     DPB B:
             /* pointer to DPB */ REQ_WORD,  /* IX  = F195 */
             /* DPB */            REQ_DMA,
             /* pointer to FAT */ REQ_WORD,  /* IY = E595 */
-            /* FAT */            REQ_DMA,
+            /* FAT */            REQ_DMA2,
             /* Sector size */    REQ_WORD,
             /* Total clusters */ REQ_WORD,
             /* Free clusters */  REQ_WORD,
@@ -613,6 +627,21 @@ private:
 
         return 1;
     }
+
+    int test_searchFirstDirent() {
+        info("test_searchFirstDirent\n");
+        m_req = new SpyRequest();
+        m_res = new SpyResponse();
+        m_req->GetFCB()->SetNameExt("A.???");
+        searchFirst();
+        dump(info, (uint8_t *) m_res->GetDMA(), m_res->GetDMASize());
+
+        delete m_req;
+        delete m_res;
+
+        return 1;
+    }
+
 
     int test_searchFirst() {
         m_req = new SpyRequest();
@@ -693,6 +722,7 @@ public:
     int testSuite() {
         return test_fileNameFromPCB() 
             && test_FCBFromFileName()
+            && test_searchFirstDirent()
             && test_searchFirst()
             && test_dosglob();
     }

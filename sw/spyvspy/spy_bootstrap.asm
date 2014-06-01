@@ -85,7 +85,7 @@ rmtReceiveDataLoop:
                 or      c
                 jr      nz, rmtReceiveDataLoop
                 
-                ld      a, 2Eh ; '.'
+                ld      a, 2Eh          ; print '.'
                 out     (98h), a        ; VRAM data read/write
 
                 jr      rmtInitialCommandLoop
@@ -93,7 +93,7 @@ rmtReceiveDataLoop:
 
 rmtLaunchMSXDOS:                        
 
-                ld      a, 0C3h ; '├'   ; jmp
+                ld      a, 0C3h         ; jmp
                 ld      (BDOS), a
                 ld      ix, (BDOS_VECTOR) ; get the first instruction of BDOS (which is jmp ...)
                 inc     ix              ; skip the instruction code
