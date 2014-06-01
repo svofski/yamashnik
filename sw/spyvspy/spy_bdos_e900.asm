@@ -320,7 +320,7 @@ Func6_ConsoleIO:
                 cp      e
                 ld      a, e
                 jr      nz, Func2_ConsoleOutput ; CHSNS Tests the status of the keyboard buffer
-                                        		; Z-flag set if buffer is filled
+                                        	; Z-flag set if buffer is filled
 		call CONST_unsafe
 		ret z
 		jp CONIN_unsafe
@@ -335,23 +335,12 @@ Func7_ConsoleInput:
 ; ---------------------------------------------------------------------------
 
 Func8_ConsoleInputNoEcho:         
-                                        
-;                rst     30h
-;                db 70h
-;                dw 9Ch
-;                jr      z, loc_0_EA27
-;                call    Func7_ConsoleInput
-;                cp      3
-;                jp      z, Func0_ProgramTerminate
-;
-;loc_0_EA27:                             
-;                rst     30h
-;                db 70h
-;                dw 009Fh
-;                ret
-		call CONST_unsafe
-		ret z
-		jp CONIN_unsafe 
+Func8_ConsoleInputNoEcho_expect:
+                rst     30h             ; CHSNS Tests the status of the keyboard buffer
+                db      70h
+                dw      9Ch
+                jr z, Func8_ConsoleInputNoEcho_expect
+                jp CONIN_unsafe
 
 ; ---------------------------------------------------------------------------
 
@@ -374,8 +363,8 @@ FuncA_BufferedLineInput:
 ; CHSNS Tests the status of the keyboard buffer
 FuncB_ConsoleStatus: 
                 rst     30h
-                db 70h
-                dw 9Ch
+                db      70h
+                dw      9Ch
                 jr      z, FuncB_ConsoleStatus_clra
                 ld      a, 0FFh
                 ret
