@@ -2,6 +2,11 @@ BDOSVEC_HI:	equ 7
 
     org 100h
 
+    rst 0 
+
+    ld hl, 0d7b0h
+    jp dumploop
+
     ld c, 9
     ld de, msg_5
     call 5
@@ -40,7 +45,8 @@ BDOSVEC_HI:	equ 7
     call OutHex8
 
     ; this exits ok rst 0
-    ret
+    ; this too ret
+    rst 0
 
     jp TestMovingToHiMem
 
@@ -98,6 +104,23 @@ nl:
 	call putchar
 	ret
 
+checkkey2:
+    rst     30h             ; CHSNS Tests the status of the keyboard buffer
+    db      70h
+    dw      9Ch
+    ret z
+    rst 30h
+    db 70h
+    dw 9fh
+    rst 30h
+    db 70h
+    dw 9fh
+    rst 30h
+    db 70h
+    dw 9fh
+    ret    
+
+
 checkkey:
 	push hl
 	jr checkkeyret
@@ -128,7 +151,7 @@ putchar:
 	ld c, 2
 	ld e, a
 	call 5
-	call checkkey
+	call checkkey2
 	pop hl
 	pop de
 	pop bc

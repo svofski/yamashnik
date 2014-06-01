@@ -228,7 +228,7 @@ private:
             int recordsread = fread(m_res->GetDMA(), recordsize, nrecords, f);
             m_res->SetDMASize(recordsread * recordsize);
             m_res->SetAuxData(0, recordsread); // records read
-            m_res->SetAuxData(1, 0);           // no error
+            m_res->SetAuxData(1, recordsread == nrecords ? 0 : 1); // error set if reached EOF
             m_res->GetFCB()->RandomRecord += recordsread;
         } while(0);
         verbose("\n");

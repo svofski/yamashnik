@@ -980,30 +980,108 @@ Init:		call PatchBIOSCalls
 
 PatchBIOSCalls:
 		ld hl, ($0001) 	; points to dc03: jmp WARMBOOT
-		ld bc, 3
-		add hl, bc
-		; HL points to CONST vector
-
 		ex de, hl 		; DE = BIOS Jump Table
 		ld hl, PatchJumpTable
 		ld bc, PatchJumpTable_End - PatchJumpTable
 		ldir
 		ret
 
-PatchJumpTable:	;jp WARMBOOT
+PatchJumpTable:	jp WARMBOOT
 		jp CONST 				; DC0F
 		jp CONIN 				; DC2C
 		jp CONOUT 				; DC43
 		;
 PatchJumpTable_End:
 
-WARMBOOT:	jp $
+WARMBOOT:
+                di
+                ; Ensure that the slots are selected 
+                ld      a, 0AAh         ; Secondary slot select register
+                ld      (SLTSL), a      ; Select expansion slot 2 in all 4 pages
+                ld      a, 0FFh
+                out     (0A8h), a       ; Primary slot register
+                                        ; select basic slot 3 (RAM) for every page
+                ; Init stack
+                ld      hl, $D5D3
+                ld      sp, hl
+
+                ld a, '<'
+                call DispCharInA
+
+                ; Calculate checksum (MSXDOS.SYS: @D7CE)
+wb_checksum:
+                ld hl, ($d613)
+                ld bc, ($d615)
+                ld de, $0
+wb_ChecksumLoop:
+                ld a, (hl)
+                inc hl
+                add a, e
+                ld e, a
+                ld a, (hl)
+                inc hl
+                adc a, d
+                ld d, a
+                dec bc
+                ld a, b
+                or c
+                jr nz, wb_ChecksumLoop
+
+                ld hl, ($d617)
+                sbc hl, de
+                jr nz, wb_LoadCommandCom
+                ld hl, ($d613)          ; COMMAND.COM entry point, $C300
+
+                ld a, '>'
+                call DispCharInA
+
+                ei
+                jp (hl)
+
+wb_LoadCommandCom:
+                ld de, $dc5b            ; COMMAND.COM FCB
+                ld c, 0fh               ; BDOS $0F Open file FCB
+                call 5
+                or a
+                jr z, wb_CommandComOpened
+wb_InsertDisk:
+                ld de, $d970            ; 'Insert disk blah...'
+                call $f1c9 
+                ; call $544e get login vector
+                jr wb_LoadCommandCom
+wb_CommandComOpened:
+                ld hl, 0
+                ld ($dc7c), hl
+                ld ($dc7e), hl
+                inc hl
+                ld ($dc69), hl
+                
+                ld hl, $100
+                ld ($f2d3), hl          ; Probably sets disk transfer address..
+                
+                ld de, $100
+                ld c, $1A
+                call 5                  ; Set disk transfer address
+
+                ld de, $dc5b
+                ld hl, $d500
+                ld c, $27               ; Random block read: HL = nrecords, DE = FCB
+                call 5
+
+                or a
+                jr z, wb_InsertDisk     ; if a = 0, EOF not reached
+
+                ld a, '>'
+                call DispCharInA
+
+                ei
+                jp $100
 
 CONST:			
-                ld		(STORESP), sp
-                ld 		sp, $DC00 
+                ld	(STORESP), sp
+                ld 	sp, $DC00 
                 call CONST_unsafe
-		ld 		sp, (STORESP)
+		ld 	sp, (STORESP)
 		ret
 
 CONST_unsafe:
@@ -1013,7 +1091,7 @@ CONST_unsafe:
                 db 	70h			; CY when Ctrl+STOP pressed
                 dw 	00B7h
 
-                jr 	nc, CONST_1 	       ; STOP was not pressed
+                jr 	nc, CONST_1 	        ; STOP was not pressed
 
                 ld a, 3 			; STOP was pressed
                 ld ($f336), a 			; Set F336 and F337 to 3

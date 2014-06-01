@@ -101,7 +101,8 @@ rmtLaunchMSXDOS:
                 ld      (ix+1), h       ; subsitute MSX-DOS BDOS vector with our own rbdos_EntryPoint
                 ld      (ix+0), l
                 call    rmtZeroSystemArea
-; Mystery patches
+
+                ; Mystery patches, these don't seem to be helping
                 ld      a, 0E1h ; 'с'   ; pop hl - why?
                 ld      (byte_0_F267), a ; OPEN
                 ld      (byte_0_F270), a ; DISKREAD
@@ -120,11 +121,10 @@ rmtLaunchMSXDOS:
                 ld      de, MSG_Loaded  ; newline
                 call    5
 
-;
-;RemoteOSLoop:                           
-;                call    TPA_EntryPoint
-;                jr      RemoteOSLoop
-                jp TPA_EntryPoint
+                ; normally we should just warmboot at this point
+                ; but it still can make sense to jp $100 if a TPA program had been loaded at bootstrap
+                ;jp TPA_EntryPoint
+                rst 0
 
 ; ****************************************
 ; * rmtZeroSystemArea 
