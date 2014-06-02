@@ -27,6 +27,11 @@ PACKAGE CONTENTS
 
 HOW TO BUILD
 ------------
+
+### MSX-Link Hardware
+If you need help, ask someone else to do it for you. There are RS-232 based variants of the adapter too. All through-hole version [here](http://sensi.org/~tnt23/msx) and a breadboard version [here](http://msxlink.chat.ru/).
+
+### Software
 You need Linux or Darwin/OSX and a sane build environment. `wget` utility is needed to fetch z80asm from savannah. 
 
 It should work in Windows with some POSIX-emulation layer but it's not proven. 
