@@ -58,16 +58,16 @@ stackloop:
                 call DispCharInA
 endif
 if DEBUG_BDOSFUNC
+                ld a, $d
+                call CONOUT_unsafe_a
+                ld a, $a
+                call CONOUT_unsafe_a
                 ld a, '<'
-                call DispCharInA
+                call CONOUT_unsafe_a
                 ld bc, (SaveBC) 
                 call OutHex8            ; print function no
                 ld a, '>'
-                call DispCharInA
-                ld a, 0dh
-                call CONOUT_unsafe
-                ld a, 0ah
-                call CONOUT_unsafe
+                call CONOUT_unsafe_a
 endif
                 ld hl, (SaveHL)
                 ld de, (SaveDE)
@@ -96,6 +96,8 @@ nodebug:
                 push    af
                 ld      a, c
                 cp      1Ah             ; Set disk transfer address
+                jr      z, NoDiskDispatch
+                cp      1Bh             ; Get Allocation Information
                 jr      z, NoDiskDispatch
                 cp      2Ah ; '*'       ; Get date
                 jr      z, NoDiskDispatch
@@ -283,8 +285,8 @@ Func1_ConsoleInput:
 
 Func2_ConsoleOutput:              
                 ;rst 	30h
-				;db 70h
-				;dw 9ch
+		;db 70h
+		;dw 9ch
 
                 ;jr      z, CHGET_waiting_bufferfull
                 ;call    Func7_ConsoleInput
@@ -403,14 +405,13 @@ Func10_CloseFile:
                 jp      FIFO_ReceiveByteWait
 ; ---------------------------------------------------------------------------
 
-Func11_SearchFirst:               
-                                        
+Func11_SearchFirst:
                 call    SendFCB
                 call    ReceiveChunkToDMA
                 jp      FIFO_ReceiveByteWait
 ; ---------------------------------------------------------------------------
 
-Func12_SearchNext:                
+Func12_SearchNext:
                 jr      Func11_SearchFirst
 ; ---------------------------------------------------------------------------
 
@@ -419,35 +420,31 @@ Func13_DeleteFile:
                 jp      FIFO_ReceiveByteWait
 ; ---------------------------------------------------------------------------
 
-Func14_SequentialRead:            
+Func14_SequentialRead:
                 call    SendFCB
                 call    ReceiveChunkToDMA
                 call    ReceiveDataToArg
                 jp      FIFO_ReceiveByteWait
 ; ---------------------------------------------------------------------------
 
-Func15_SequentialWrite:           
+Func15_SequentialWrite:
                 push    bc
-                ld      bc, 1388h
-                call    DelayBC
                 pop     bc
                 call    SendFCB
                 push    bc
-                ld      bc, 1388h
-                call    DelayBC
                 pop     bc
                 call    Send128BytesFromDMA
                 call    ReceiveDataToArg
                 jp      FIFO_ReceiveByteWait
 ; ---------------------------------------------------------------------------
 
-Func16_CreateFile:                
+Func16_CreateFile:
                 call    SendFCB
                 call    ReceiveDataToArg
                 jp      FIFO_ReceiveByteWait
 ; ---------------------------------------------------------------------------
 
-Func17_RenameFile:                
+Func17_RenameFile:
                 ld      h, d
                 ld      l, e
                 ld      bc, SIZEOF_FCB
@@ -455,7 +452,7 @@ Func17_RenameFile:
                 jp      FIFO_ReceiveByteWait
 ; ---------------------------------------------------------------------------
 
-Func18_GetLoginVector:            
+Func18_GetLoginVector:
                 call    FIFO_ReceiveByteWait
                 ld      h, a
                 call    FIFO_ReceiveByteWait
@@ -463,46 +460,39 @@ Func18_GetLoginVector:
                 ret
 ; ---------------------------------------------------------------------------
 
-Func19_GetCurrentDrive:           
+Func19_GetCurrentDrive:
                 jp      FIFO_ReceiveByteWait
 ; ---------------------------------------------------------------------------
 
-Func1A_SetDMA:                    
+Func1A_SetDMA:           
                 ld      (CurrentDMAAddr), de
                 ret
 ; ---------------------------------------------------------------------------
 
 Func1B_GetAllocInfo:
-                ld      d, e
-                call    FIFO_SendByte
-                call    FIFO_ReceiveByteWait    ; address to receive next chunk (DPB): 0xF195
-                ld      h, a
-                call    FIFO_ReceiveByteWait
-                ld      l, a
-                push    hl
-                pop     ix                      ; IX = pointer to DPB
-                call    ReceiveDataChunk        ; DPB<0xf3>
+                ; The host cannot provide us with any useful data, so this is a diskless function
+                ; DPB is expected to be located at $f195
+                ld hl, $f195
+                push hl
+                pop ix
+                ; first sector of FAT is expected to be located around $e595
+                ld hl, $e595
+                push hl
+                pop iy
+                ld bc, 512      ; BC = sector size
+                ld de, $2c9     ; DE = total clusters
+                ld hl, $2c9     ; HL = free clusters
+                ld a, 2         ; A = sectors per cluster
+                ret
+; ---------------------------------------------------------------------------
 
-                call    FIFO_ReceiveByteWait    ; address to receive next chunk (FAT): 0xE595
-                ld      h, a
-                call    FIFO_ReceiveByteWait
-                ld      l, a
-                push    hl
-                pop     iy                      ; IY = pointer to the first sector of FAT
-                call    ReceiveDataChunk        ; receive first sector of FAT
-                call    FIFO_ReceiveByteWait    ; BC = word secor size (always 512)
-                ld      b, a
-                call    FIFO_ReceiveByteWait
-                ld      c, a
-                call    FIFO_ReceiveByteWait    ; DE = total clusters
-                ld      d, a
-                call    FIFO_ReceiveByteWait
-                ld      e, a
-                call    FIFO_ReceiveByteWait    ; HL = free clusters
-                ld      h, a
-                call    FIFO_ReceiveByteWait
-                ld      l, a
-                jp      FIFO_ReceiveByteWait    ; sectors per cluster
+                ; CP/M get DPB address in HL
+                ; should not exist in MSX-DOS but Turbo Pascal calls it 
+Func1F_GetDPBAddress:
+                xor a
+                ld b, a
+                ld hl, $f195
+                ret
 ; ---------------------------------------------------------------------------
 
 Func21_RandomRead:          
@@ -667,6 +657,8 @@ Func30_AbsoluteSectorWrite:
                 ret
 
 FuncXX_NoOperation:
+                ld a, '?'
+                call CONOUT_unsafe_a
 		ret
 
 SendWord:
@@ -923,7 +915,7 @@ Ret1:			dw 0
 Ret2:			dw 0
 ;CAPST:    db 0                    
                                         ; RestoreCAPS:caps_light_on ...
-DispatchTable:dw Func0_ProgramTerminate
+DispatchTable:  dw Func0_ProgramTerminate
                                         
                 dw Func1_ConsoleInput ; CHSNS Tests the status of the keyboard buffer
                 dw Func2_ConsoleOutput ; CHSNS Tests the status of the keyboard buffer
@@ -956,7 +948,7 @@ DispatchTable:dw Func0_ProgramTerminate
                 dw FuncXX_NoOperation
                 dw FuncXX_NoOperation
                 dw FuncXX_NoOperation
-                dw FuncXX_NoOperation
+                dw Func1F_GetDPBAddress
                 dw FuncXX_NoOperation
                 dw Func21_RandomRead
                 dw Func22_RandomWrite
@@ -1170,6 +1162,16 @@ CONOUT_unsafe:
 		pop ix
                 ret
 
+CONOUT_unsafe_a:
+                push ix
+                push iy
+                rst     30h             ; CHPUT
+                db      70h
+                dw      0A2h
+                pop iy
+                pop ix
+                ret
+
 
 ;Display a 16- or 8-bit number in hex.
 DispHLhex:
@@ -1192,8 +1194,9 @@ Conv:
                 daa
                 adc  a,$40
                 daa
-                out (98h), a
-                ret
+                jp CONOUT_unsafe_a
+                ;out (98h), a
+                ;ret
 
 DispSpace:
 	       ld a, ' '

@@ -528,42 +528,11 @@ private:
         m_res->respond((uint8_t[]) {REQ_DMA, 0});
     }
 
-/*
-http://www.kameli.net/lt/bdos1var.txt 
-
-F195H-F1A9H     Driver Parameter Block (DPB) A:
-F1AAH-F1BEH     DPB B:
-*/
-    void getAllocInfo() {
+    void stubFunc() {
         newline();
-        announce("get allocation information");
-        info(" %c:", 'A' + m_req->GetAuxData(0));
-
-        //uint8_t dpb[32];
-        //memset(dpb, 0, 32);
-        DPB dpb;
-        uint8_t fat[512];
-
-        m_res->AssignDMA((uint8_t *)&dpb, sizeof(DPB));
-        m_res->AssignDMA2(&fat[0], 512);
-
-        m_res->SetAuxData(0, 0xF195);       // address of DPB in MSX-DOS area
-        m_res->SetAuxData(1, 0xE595);       // address of first FAT sector in MSX-DOS area
-        m_res->SetAuxData(2, SECTORSIZE);   // BC, sector size
-        m_res->SetAuxData(3, 0x2c9);        // DE, total clusters
-        m_res->SetAuxData(4, 0x2c9);        // HL, free clusters
-        m_res->SetAuxData(5, 2);            // A, sectors per cluster
-
-        m_res->respond((uint8_t[]) {
-            /* pointer to DPB */ REQ_WORD,  /* IX  = F195 */
-            /* DPB */            REQ_DMA,
-            /* pointer to FAT */ REQ_WORD,  /* IY = E595 */
-            /* FAT */            REQ_DMA2,
-            /* Sector size */    REQ_WORD,
-            /* Total clusters */ REQ_WORD,
-            /* Free clusters */  REQ_WORD,
-            /* Sctrs per clstr */REQ_BYTE
-        });
+        announce("not implemented");
+        verbose("\n");
+        m_res->respond((uint8_t[]) {0});
     }
 
 private:
@@ -771,7 +740,7 @@ public:
             getCurrentDrive();
             break;
         case F1B_GET_ALLOC_INFO:
-            getAllocInfo();
+            stubFunc();
             break;
         case F21_RANDOM_READ:
             randomRead();
@@ -783,18 +752,22 @@ public:
             getFileSize();
             break;
         case F24_SET_RANDOM_RECORD:
+            stubFunc();
             break;
         case F26_RANDOM_BLOCK_WRITE:
+            stubFunc();
             break;
         case F27_RANDOM_BLOCK_READ:
             randomBlockRead();
             break;
         case F28_RANDOM_WRITE_ZERO:
+            stubFunc();
             break;
         case F2F_ABS_SECTOR_READ:
             absSectorRead();
             break;
         case F30_ABS_SECTOR_WRITE:
+            stubFunc();
             break;
         default:
             break;

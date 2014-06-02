@@ -54,7 +54,7 @@ struct FCB {
 /* 28 */    uint16_t    LastClusterAccessed;
 /* 30 */    uint16_t    RelativeLocation;
 
-/* 32 */    uint8_t     CurrentRecord;      // Curent Record within Extent
+/* 32 */    uint8_t     CurrentRecord;      // Current Record within Extent
 /* 33 */    uint32_t    RandomRecord;
 /* 36 */    uint32_t    Padding;
 /* 40 */    uint8_t     Padding2[3];
