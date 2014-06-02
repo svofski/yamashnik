@@ -3,7 +3,7 @@ yamashnik
 YIS503II MSX-2 MSX-NET hardware and software
 
 This package facilitates use of a remote MSX-2 workstation equipped with network 
-module. The only known instance of such workstation is Yamaha YIS503II that used
+module. The only known instance of such workstation is Yamaha YIS-503/IIIR that used
 to be deployed in Russian schools in the 1980s.
 
 To operate, a hardware adapter is needed for the PC. It's a USB to Serial converter
