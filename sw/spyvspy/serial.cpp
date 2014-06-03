@@ -64,15 +64,13 @@ int SerialPort::waitRx(const int intents)
 
 		FD_ZERO(&fdSet);
 		FD_SET(m_fd, &fdSet);
+		readfdSet = select(m_fd + 1, &fdSet, (fd_set *) 0, (fd_set *) 0, &timeout);
 
-		readfdSet = select(m_fd + 1,
-						&fdSet,
-						(fd_set *) 0,
-						(fd_set *) 0,
-						&timeout);
-
-		if (readfdSet < 0) {
+		if (readfdSet < 0 || errno == ENXIO) {
 			info("Error in select(): %s\n", strerror(errno));
+			if (errno == ENXIO) {
+				eggog("Device had been unplugged, terminating.\n");
+			}
 		}
 
 		//info("$ %08x ", readfdSet);

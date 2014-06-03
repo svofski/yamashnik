@@ -182,6 +182,26 @@ Conv:
    call putchar
    ret
 
+   ;; a piece of patch for ROGUE.COM GotoXY routine
+    ; h = row, l = column
+    push hl
+    ld c, $1b
+    call $109
+    ld c, 'Y'
+    call $109
+    pop hl
+    ld a, h
+    add 32
+    ld c, a
+    push hl
+    call $109
+    pop hl
+    ld a, l
+    add 32
+    ld c, a
+    jp $109
+    ;;
+
 
 msg:    db $0d,$0a,'TPA program launched SLUTSEL=$'
 

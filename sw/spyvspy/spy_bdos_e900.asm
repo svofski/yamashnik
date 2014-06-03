@@ -917,10 +917,10 @@ Ret2:			dw 0
                                         ; RestoreCAPS:caps_light_on ...
 DispatchTable:  dw Func0_ProgramTerminate
                                         
-                dw Func1_ConsoleInput ; CHSNS Tests the status of the keyboard buffer
-                dw Func2_ConsoleOutput ; CHSNS Tests the status of the keyboard buffer
+                dw Func1_ConsoleInput   ; CHSNS Tests the status of the keyboard buffer
+                dw Func2_ConsoleOutput  ; CHSNS Tests the status of the keyboard buffer
                                         ; Z-flag set if buffer is filled
-                dw Func3_AUXin    ; AUX in
+                dw Func3_AUXin          ; AUX in
                 dw Func4_AUXout
                 dw Func5_PrinterOutput
                 dw Func6_ConsoleIO
@@ -928,9 +928,9 @@ DispatchTable:  dw Func0_ProgramTerminate
                 dw Func8_ConsoleInputNoEcho
                 dw Func9_StringOutput
                 dw FuncA_BufferedLineInput
-                dw FuncB_ConsoleStatus ; CHSNS Tests the status of the keyboard buffer
+                dw FuncB_ConsoleStatus  ; CHSNS Tests the status of the keyboard buffer
                 dw FuncC_VersionNumber
-                dw FuncD_DiskReset ; Set DMA to 0x0080
+                dw FuncD_DiskReset      ; Set DMA to 0x0080
                 dw FuncE_SelectDisk
                 dw FuncF_OpenFile
                 dw Func10_CloseFile
