@@ -22,7 +22,7 @@ The host software supports 3 different modes:
 
 PACKAGE CONTENTS
 ----------------
-- `kicad/` USB to MSXNET adapter schematic + PCB layout for home making
+- `kicad/` USB to MSXNET adapter [schematic](kicad/yamashnik.pdf) + PCB layout for home making
 - `sw/spyvspy/` software that emulates server software and supports various boot protocols
 
 HOW TO BUILD
