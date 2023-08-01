@@ -4,6 +4,11 @@
 #include <strings.h>
 #include <sys/stat.h>
 
+#ifndef __APPLE__
+#include <linux/limits.h>
+#define GLOB_MAXPATH PATH_MAX
+#endif
+
 #include "spy.h"
 #include "diags.h"
 #include "basicsend.h"
@@ -42,7 +47,7 @@ void Spy::extractExePath() {
 		}
 	}
 
-	char* pathend = strrchr(fullPath, '/');
+	const char* pathend = strrchr(fullPath, '/');
 	int pathlen = pathend - fullPath;
 	m_ExePath = new char[pathlen + 1];
 	strncpy(m_ExePath, fullPath, pathlen);
@@ -215,7 +220,7 @@ int Spy::Serve() {
 
 	for(int i = 0;; i++) {
 		if (!transport.Poll(m_studentNo)) {
-			info(i & 0 == 0 ? "'\010" : "`\010");
+			info((i & 0) == 0 ? "'\010" : "`\010");
 			continue;
 		}
 
@@ -326,6 +331,30 @@ int SpyTransport::Poll(uint8_t studentNo)
 	return m_serial->waitRx();
 }
 
+static constexpr uint8_t EXP_F0E_SELECT_DISK[] {REQ_BYTE, 0};
+static constexpr uint8_t EXP_F0F_OPEN_FILE[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F10_CLOSE_FILE[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F11_SEARCH_FIRST[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F12_SEARCH_NEXT[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F13_DELETE[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F14_SEQ_READ[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F15_SEQ_WRITE[] {REQ_FCB, REQ_DMA, 0};
+static constexpr uint8_t EXP_F16_CREAT[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F17_RENAME[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F18_GETLOGINVECTOR[] {0};
+static constexpr uint8_t EXP_F19_GET_CURRENT_DRIVE[] {0};
+static constexpr uint8_t EXP_F1B_GET_ALLOC_INFO[] {REQ_BYTE, 0};
+static constexpr uint8_t EXP_F21_RANDOM_READ[] {REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_FCB, 0};
+static constexpr uint8_t EXP_F22_RANDOM_WRITE[] {REQ_FCB, REQ_DMA, 0};
+static constexpr uint8_t EXP_F23_GET_FILE_SIZE[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F24_SET_RANDOM_RECORD[] {REQ_FCB, 0};
+static constexpr uint8_t EXP_F26_RANDOM_BLOCK_WRITE[] {REQ_WORD, REQ_DMA, REQ_FCB, 0};
+static constexpr uint8_t EXP_F27_RANDOM_BLOCK_READ[] {REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_FCB, 0};
+static constexpr uint8_t EXP_F28_RANDOM_WRITE_ZERO[] {REQ_DMA, REQ_FCB, 0};
+static constexpr uint8_t EXP_F2F_ABS_SECTOR_READ[] {REQ_WORD, REQ_BYTE, REQ_BYTE, 0};
+static constexpr uint8_t EXP_F30_ABS_SECTOR_WRITE[] {REQ_WORD, REQ_BYTE, REQ_BYTE, REQ_DMA, 0};
+static constexpr uint8_t EXP_NULL[] {0};
+
 int SpyTransport::ReceiveRequest(SpyRequest* request)
 {
 	m_rq = request;
@@ -338,40 +367,40 @@ int SpyTransport::ReceiveRequest(SpyRequest* request)
 	m_rq->setFunc(m_func);
 	switch (m_func) {
 	case F0E_SELECT_DISK:		// Rx: byte<disk> Tx: nothing
-		{m_rq->expect((uint8_t[]){REQ_BYTE, 0});}
+		{m_rq->expect(EXP_F0E_SELECT_DISK);}
 		break;
 	case F0F_OPEN_FILE:			// Rx: FCB<>, Tx: FCB<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F0F_OPEN_FILE);}
 		break;
 	case F10_CLOSE_FILE:		// Rx: FCB<>, Tx: byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F10_CLOSE_FILE);}
 		break;
 	case F11_SEARCH_FIRST:		// Rx: FCB<>, Tx: DMA<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F11_SEARCH_FIRST);}
 		break;
 	case F12_SEARCH_NEXT: 		// Rx: FCB<>, Tx: DMA<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F12_SEARCH_NEXT);}
 		break;
 	case F13_DELETE:			// Rx: FCB<>, Tx: byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F13_DELETE);}
 		break;
 	case F14_SEQ_READ:			// Rx: FCB<>, Tx: DMA<>, FCB<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F14_SEQ_READ);}
 		break;
 	case F15_SEQ_WRITE: 		// Rx: FCB<>, DMA<>  Tx: FCB<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, REQ_DMA, 0});}
+		{m_rq->expect(EXP_F15_SEQ_WRITE);}
 		break;
 	case F16_CREAT:				// Rx: FCB<>, Tx: FCB<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F16_CREAT);}
 		break;
 	case F17_RENAME:			// Rx: FCB<>, Tx: byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F17_RENAME);}
 		break;
 	case F18_GETLOGINVECTOR:	// Rx: nothing Tx: word<?>
-		{m_rq->expect((uint8_t[]){0});}
+		{m_rq->expect(EXP_F18_GETLOGINVECTOR);}
 		break;
 	case F19_GET_CURRENT_DRIVE:	// Rx: 		  		Tx: byte<disk> 
-		{m_rq->expect((uint8_t[]){0});}
+		{m_rq->expect(EXP_F19_GET_CURRENT_DRIVE);}
 		break;
 	case F1B_GET_ALLOC_INFO: 	// Rx: byte<drive>
 								// Tx: DPB<> (0xF3 bytes)
@@ -381,50 +410,50 @@ int SpyTransport::ReceiveRequest(SpyRequest* request)
 								//	   word<total clusters> = ?
 								//	   word<free clusters> = ?
 								//	   byte<result>
-		{m_rq->expect((uint8_t[]){REQ_BYTE, 0});}
+		{m_rq->expect(EXP_F1B_GET_ALLOC_INFO);}
 		break;
 
 	case F21_RANDOM_READ:		// Rx: FCB<>, 		Tx: DMA<>, FCB<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_FCB, 0});}
+		{m_rq->expect(EXP_F21_RANDOM_READ);}
 		break;
 	case F22_RANDOM_WRITE:		// Rx: FCB<>, DMA<>	Tx: byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, REQ_DMA, 0});}
+		{m_rq->expect(EXP_F22_RANDOM_WRITE);}
 		break;
 	case F23_GET_FILE_SIZE:		// Rx: FCB<>, 		Tx: FCB<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F23_GET_FILE_SIZE);}
 		break;
 	case F24_SET_RANDOM_RECORD:	// Rx: FCB<>, 		Tx: FCB<>
-		{m_rq->expect((uint8_t[]){REQ_FCB, 0});}
+		{m_rq->expect(EXP_F24_SET_RANDOM_RECORD);}
 		break;
 	case F26_RANDOM_BLOCK_WRITE:// Rx: word<size>, DMA<>, FCB<>
 								// Tx: FCB<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_WORD, REQ_DMA, REQ_FCB, 0});}
+		{m_rq->expect(EXP_F26_RANDOM_BLOCK_WRITE);}
 		break;
 
 
 	case F27_RANDOM_BLOCK_READ:	// Rx: word<size>, FCB<>
 								// Tx: word<bytesread>, DMA<>, FCB<>, byte<result>
-		{m_rq->expect((uint8_t[]){/**/REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, REQ_WORD, /**/ REQ_WORD, REQ_FCB, 0});}
+		{m_rq->expect(EXP_F27_RANDOM_BLOCK_READ);}
 		break;
 	case F28_RANDOM_WRITE_ZERO:	// Rx: FCB<>, DMA<>	Tx: FCB<>, byte<result>
-		{m_rq->expect((uint8_t[]){REQ_DMA, REQ_FCB, 0});}
+		{m_rq->expect(EXP_F28_RANDOM_WRITE_ZERO);}
 		break;
 	case F2F_ABS_SECTOR_READ:	// Rx: trash byte
 								//     word<sector number>
 								//     byte<number of sectors to read>
 								//	   byte<drive num 0=A>
 								// Tx: DMA<>
-		{m_rq->expect((uint8_t[]){REQ_WORD, REQ_BYTE, REQ_BYTE, 0});}
+		{m_rq->expect(EXP_F2F_ABS_SECTOR_READ);}
 		break;
 	case F30_ABS_SECTOR_WRITE:	// Rx: word<sector number>
 								// 	   byte<number of sectors to write>
 								//	   byte<drive num 0=A>
 								// 	   DMA<>
 								// Tx: nothing
-		{m_rq->expect((uint8_t[]){REQ_WORD, REQ_BYTE, REQ_BYTE, REQ_DMA, 0});}
+		{m_rq->expect(EXP_F30_ABS_SECTOR_WRITE);}
 		break;
 	default:
-		{m_rq->expect((uint8_t[]){0});}
+		{m_rq->expect(EXP_NULL);}
 		break;
 	}
 

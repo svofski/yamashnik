@@ -68,7 +68,8 @@ private:
         }
         verbose("\n");
         m_res->SetAuxData(0, 0x01); // number of available drives
-        m_res->respond((uint8_t[]){REQ_BYTE, 0});
+        uint8_t response[] {REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void zeroFCBFields(FCB* fcb) {
@@ -116,7 +117,8 @@ private:
 
         verbose("\n");
 
-        m_res->respond((uint8_t[]){REQ_FCB, REQ_BYTE, 0});
+        uint8_t response[] {REQ_FCB, REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void closeFile() {
@@ -127,7 +129,8 @@ private:
         info(" '%s'", filename);
         verbose("\n");
         m_res->SetAuxData(0, 0x00);
-        m_res->respond((uint8_t[]){REQ_BYTE, 0});
+        uint8_t response[] {REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void getCurrentDrive() {
@@ -136,7 +139,8 @@ private:
         info(" %c:", 'A' + m_disk);
         verbose("\n");
         m_res->SetAuxData(0, m_disk);
-        m_res->respond((uint8_t[]){REQ_BYTE, 0});
+        uint8_t response[] {REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void searchFirst() {
@@ -159,7 +163,8 @@ private:
 
         m_res->AssignDMA((uint8_t *)&dirent, sizeof(DIRENT));
         m_res->SetAuxData(0, first ? 0 : 0xff);
-        m_res->respond((uint8_t[]){REQ_DMA, REQ_BYTE, 0});
+        uint8_t response[] {REQ_DMA, REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void searchNext() {
@@ -184,7 +189,8 @@ private:
         m_res->AssignDMA((uint8_t *)&dirent, sizeof(DIRENT));
         m_res->SetAuxData(0, result);
 
-        m_res->respond((uint8_t[]){REQ_DMA, REQ_BYTE, 0});
+        uint8_t response[] {REQ_DMA, REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void randomBlockRead() {
@@ -234,7 +240,9 @@ private:
         verbose("\n");
 
         fclose(f);
-        m_res->respond((uint8_t[]){REQ_WORD, REQ_DMA, REQ_FCB, REQ_BYTE, 0});
+
+        uint8_t response[] {REQ_WORD, REQ_DMA, REQ_FCB, REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void randomRead() {
@@ -295,7 +303,8 @@ private:
 
         verbose("\n");
 
-        m_res->respond((uint8_t[]){REQ_DMA, REQ_FCB, REQ_BYTE, 0});
+        uint8_t response[] {REQ_DMA, REQ_FCB, REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void sequentialRead() {
@@ -347,7 +356,8 @@ private:
         verbose(" advance: rec=%d ext=%d", m_res->GetFCB()->CurrentRecord, m_res->GetFCB()->GetExtent());
         verbose("\n");
 
-        m_res->respond((uint8_t[]){REQ_DMA, REQ_FCB, REQ_BYTE, 0});
+        uint8_t response[] {REQ_DMA, REQ_FCB, REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void getLoginVector() {
@@ -355,7 +365,8 @@ private:
         announce("get login vector");
         verbose("\n");
         m_res->SetAuxData(0, 0x0001); // LSB corresponds to drive A
-        m_res->respond((uint8_t[]){REQ_WORD, 0});
+        uint8_t response[] {REQ_WORD, 0};
+        m_res->respond(response);
     }
 
     void getFileSize() {
@@ -370,7 +381,8 @@ private:
         m_res->GetFCB()->FileSize = size;
 
         m_res->SetAuxData(0, size == -1 ? 0xff : 0);
-        m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
+        uint8_t response[] {REQ_FCB, REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void deleteFile() {
@@ -391,7 +403,8 @@ private:
         info(": %s: %s", filename, errmsg);
         verbose("\n");
 
-        m_res->respond((uint8_t[]) {REQ_BYTE, 0});
+        uint8_t response[] {REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void renameFile() {
@@ -413,7 +426,8 @@ private:
         }
         verbose("\n");
 
-        m_res->respond((uint8_t[]) {REQ_BYTE, 0});
+        uint8_t response[] {REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
     void createFile() {
@@ -445,8 +459,8 @@ private:
             info("error: non-zero extent create not supported");
         }
         verbose("\n");
-
-        m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
+        uint8_t response[] {REQ_FCB, REQ_BYTE, 0};
+        m_res->respond(response);
     }
 
 
@@ -508,9 +522,11 @@ private:
         verbose("\n");
 
         if (sequential) {
-            m_res->respond((uint8_t[]) {REQ_FCB, REQ_BYTE, 0});
+            uint8_t response[] {REQ_FCB, REQ_BYTE, 0};
+            m_res->respond(response);
         } else {
-            m_res->respond((uint8_t[]) {REQ_BYTE, 0});
+            uint8_t response[] {REQ_BYTE, 0};
+            m_res->respond(response);
         }
     }
 
@@ -525,14 +541,18 @@ private:
         m_res->AllocDMA(SECTORSIZE * m_req->GetAuxData(1));
         m_res->SetDMASize(SECTORSIZE * m_req->GetAuxData(1));
         memset(m_res->GetDMA(), 0, SECTORSIZE * m_req->GetAuxData(1));
-        m_res->respond((uint8_t[]) {REQ_DMA, 0});
+
+        uint8_t response[] {REQ_DMA, 0};
+        m_res->respond(response);
     }
 
     void stubFunc() {
         newline();
         announce("not implemented");
         verbose("\n");
-        m_res->respond((uint8_t[]) {0});
+
+        uint8_t response[] {0};
+        m_res->respond(response);
     }
 
 private:
@@ -629,9 +649,9 @@ private:
     }
 
     int test_dosglob() {
-        char dosname[12];
+        //char dosname[12];
         const char *in;
-        dosname[11] = 0;
+        //dosname[11] = 0;
 
         Globor g(".");
 

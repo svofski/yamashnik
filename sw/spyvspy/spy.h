@@ -87,7 +87,7 @@ public:
         m_func = func;
     }
 
-    void expect(const uint8_t RxPattern[]) {
+    void expect(const uint8_t * RxPattern) {
         m_rxpattern = new uint8_t[strlen((const char*)RxPattern) + 1];
         strcpy((char *)m_rxpattern, (const char *)RxPattern);
         m_rxcursor = 0;
@@ -261,7 +261,7 @@ public:
         if (m_txpattern) delete[] m_txpattern;
     }
 
-    void respond(const uint8_t TxPattern[]) {
+    void respond(const uint8_t * TxPattern) {
         m_txpattern = new uint8_t[strlen((const char*)TxPattern) + 1];
         strcpy((char *)m_txpattern, (const char *)TxPattern);
     }

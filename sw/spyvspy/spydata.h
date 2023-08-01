@@ -1,8 +1,13 @@
 #pragma once
 
 #include "util.h"
-#include <sys/stat.h>
+#ifdef __APPLE__
 #include <sys/time.h>
+#else
+#include <time.h>
+#endif
+#include <sys/stat.h>
+#include <string.h>
 
 enum SpyRequestCode {
     F0E_SELECT_DISK         = 0,                    

@@ -1,7 +1,7 @@
 #include <inttypes.h>
 #include <fcntl.h>
 #include <termios.h>
-#include <strings.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/select.h>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <inttypes.h>
-#include <strings.h>
+#include <string.h>
 #include <ctype.h>
 #include "serial.h"
 #include "commands.h"
