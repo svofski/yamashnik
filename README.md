@@ -49,5 +49,5 @@ LICENSE
 -------
 This package is distributed as is. You can do whatever you want with it as long as you give credit to the authors.
 
-- Viacheslav Slavinsky http://sensi.org/~svo
+- Viacheslav Slavinsky https://caglrc.cc
 - Based on research and software by Tim Tashpulatov http://sensi.org/~tnt23/msx
